@@ -8,9 +8,9 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "KumaR AI",
+  title: "kumaR ai — AI Automation Studio",
   description:
-    "We build AI systems that automate calls, messages, and workflows to generate clients on autopilot.",
+    "kumaR ai builds AI systems that automate calls, messages, and workflows to generate clients on autopilot.",
 };
 
 export default function RootLayout({
