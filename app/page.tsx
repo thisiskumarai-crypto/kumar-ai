@@ -1,29 +1,35 @@
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
-      <h1 className="text-5xl md:text-6xl font-bold text-center">
-        KumaR AI
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white flex items-center justify-center px-6">
+      <div className="max-w-3xl text-center">
+        <span className="inline-block mb-4 px-4 py-1 rounded-full border border-white/20 text-sm text-white/70">
+          AI Automation Agency
+        </span>
 
-      <p className="mt-6 text-gray-400 text-center max-w-xl text-lg">
-        Automatizamos llamadas, mensajes y procesos para que tu negocio
-        consiga más clientes sin contratar más personal.
-      </p>
+        <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
+          KumaR AI
+        </h1>
 
-      <div className="mt-10 flex gap-4">
-        <a
-          href="#"
-          className="px-8 py-4 bg-white text-black rounded-xl font-semibold hover:scale-105 transition"
-        >
-          Agenda una demo
-        </a>
+        <p className="mt-6 text-lg text-white/70">
+          We automate calls, messages, and business processes using artificial
+          intelligence so you can get more clients without hiring more staff.
+        </p>
 
-        <a
-          href="#"
-          className="px-8 py-4 border border-white/20 rounded-xl hover:bg-white/10 transition"
-        >
-          Ver cómo funciona
-        </a>
+        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="#"
+            className="px-8 py-4 rounded-xl bg-white text-black font-semibold hover:scale-105 transition"
+          >
+            Book a demo
+          </a>
+
+          <a
+            href="#"
+            className="px-8 py-4 rounded-xl border border-white/30 text-white hover:bg-white/10 transition"
+          >
+            See how it works
+          </a>
+        </div>
       </div>
     </main>
   );
