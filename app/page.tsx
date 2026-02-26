@@ -1,36 +1,67 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white flex items-center justify-center px-6">
-      <div className="max-w-3xl text-center">
-        <span className="inline-block mb-4 px-4 py-1 rounded-full border border-white/20 text-sm text-white/70">
-          AI Automation Agency
-        </span>
+    <main className="min-h-screen bg-black text-white px-8 md:px-20 py-24">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="max-w-5xl"
+      >
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="text-sm text-white/60 mb-6"
+        >
+          AI Automation Studio
+        </motion.p>
 
-        <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
-          KumaR AI
-        </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
+          className="text-5xl md:text-7xl font-medium leading-tight tracking-tight"
+        >
+          We build AI systems that
+          <br />
+          generate clients on autopilot.
+        </motion.h1>
 
-        <p className="mt-6 text-lg text-white/70">
-          We automate calls, messages, and business processes using artificial
-          intelligence so you can get more clients without hiring more staff.
-        </p>
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="mt-8 text-lg text-white/70 max-w-xl"
+        >
+          KumaR AI helps service-based businesses automate calls, messages,
+          and workflows using artificial intelligence.
+        </motion.p>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="mt-12 flex gap-6"
+        >
           <a
             href="#"
-            className="px-8 py-4 rounded-xl bg-white text-black font-semibold hover:scale-105 transition"
+            className="text-lg underline underline-offset-8 hover:text-white/80 transition"
           >
             Book a demo
           </a>
 
           <a
             href="#"
-            className="px-8 py-4 rounded-xl border border-white/30 text-white hover:bg-white/10 transition"
+            className="text-lg text-white/60 hover:text-white transition"
           >
-            See how it works
+            See how it works →
           </a>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </main>
   );
 }
