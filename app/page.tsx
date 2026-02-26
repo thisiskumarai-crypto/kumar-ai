@@ -1,33 +1,47 @@
 "use client";
 
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import { motion } from "framer-motion";
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white px-8 md:px-20 pt-40 pb-24">
+    <main className="min-h-screen bg-black text-white px-8 md:px-24 pt-44 pb-32">
       <Header />
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="max-w-5xl"
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1100px]"
       >
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
+          variants={item}
           className="text-sm text-white/60 mb-6"
         >
           AI Automation Studio
         </motion.p>
 
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-          className="text-5xl md:text-7xl font-medium leading-tight tracking-tight"
+          variants={item}
+          className="text-[42px] md:text-[72px] font-medium leading-[1.05] tracking-tight"
         >
           We build AI systems that
           <br />
@@ -35,36 +49,36 @@ export default function Home() {
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-8 text-lg text-white/70 max-w-xl"
+          variants={item}
+          className="mt-10 text-[17px] md:text-[18px] text-white/70 max-w-[520px]"
         >
-          KumaR AI helps service-based businesses automate calls, messages,
+          kumaR ai helps service-based businesses automate calls, messages,
           and workflows using artificial intelligence.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-12 flex gap-6"
+          variants={item}
+          className="mt-14 flex gap-10"
         >
           <a
             href="#"
-            className="text-lg underline underline-offset-8 hover:text-white/80 transition"
+            className="relative text-lg underline underline-offset-8 transition-all
+                       after:absolute after:left-0 after:-bottom-1 after:h-[1px] after:w-0
+                       after:bg-white after:transition-all hover:after:w-full"
           >
             Book a demo
           </a>
 
           <a
             href="#"
-            className="text-lg text-white/60 hover:text-white transition"
+            className="text-lg text-white/60 transition-all hover:text-white hover:translate-x-0.5"
           >
             See how it works →
           </a>
         </motion.div>
       </motion.div>
+
+      <Footer />
     </main>
   );
 }
