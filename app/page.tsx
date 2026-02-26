@@ -1,10 +1,13 @@
 "use client";
 
+import Header from "./components/Header";
 import { motion } from "framer-motion";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white px-8 md:px-20 py-24">
+    <main className="min-h-screen bg-black text-white px-8 md:px-20 pt-40 pb-24">
+      <Header />
+
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
