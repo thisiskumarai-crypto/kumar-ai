@@ -23,7 +23,7 @@ const item = {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white px-8 md:px-24 pt-44 pb-32">
+    <main className="min-h-screen text-white px-8 md:px-24 pt-44 pb-32 relative z-10">
       <Header />
 
       <motion.div
