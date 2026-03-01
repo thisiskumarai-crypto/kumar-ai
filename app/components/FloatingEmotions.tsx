@@ -96,29 +96,6 @@ function Background(){
 // ═══════════════════════════════════════════════════════════════════════════════
 // SVG ILLUSTRATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
-
-// FIX: Pre-calculate all Math.cos/sin values as constants to avoid SSR/client
-// floating-point precision mismatches that cause hydration errors.
-const ORBIT_LINES = [0, 72, 144, 216, 288].map((angle) => ({
-  x2: parseFloat((160 + 140 * Math.cos((angle * Math.PI) / 180)).toFixed(4)),
-  y2: parseFloat((160 + 140 * Math.sin((angle * Math.PI) / 180)).toFixed(4)),
-}));
-
-const ORBIT_DOTS = [
-  {r:60,  a:0,   s:6, c:"rgba(139,92,246,0.9)",   d:8},
-  {r:60,  a:180, s:4, c:"rgba(196,166,255,0.6)",  d:8},
-  {r:100, a:45,  s:8, c:"rgba(109,40,217,0.9)",   d:13},
-  {r:100, a:225, s:5, c:"rgba(167,110,255,0.7)",  d:13},
-  {r:100, a:135, s:4, c:"rgba(196,166,255,0.5)",  d:13},
-  {r:140, a:90,  s:7, c:"rgba(139,92,246,0.8)",   d:18},
-  {r:140, a:270, s:5, c:"rgba(88,28,220,0.7)",    d:18},
-  {r:140, a:20,  s:3, c:"rgba(196,166,255,0.4)",  d:18},
-].map((d) => ({
-  ...d,
-  cx: parseFloat((160 + d.r * Math.cos((d.a * Math.PI) / 180)).toFixed(4)),
-  cy: parseFloat((160 + d.r * Math.sin((d.a * Math.PI) / 180)).toFixed(4)),
-}));
-
 function IllustrationOrbitNetwork(){
   return(
     <svg width="320" height="320" viewBox="0 0 320 320" fill="none" className="w-full max-w-[320px]">
@@ -130,13 +107,13 @@ function IllustrationOrbitNetwork(){
         animate={{scale:[1,1.12,1]}} transition={{duration:3,repeat:Infinity}} style={{transformOrigin:"160px 160px"}}/>
       <motion.circle cx="160" cy="160" r="6" fill="rgba(196,166,255,0.9)"
         animate={{scale:[1,1.3,1]}} transition={{duration:2,repeat:Infinity}} style={{transformOrigin:"160px 160px"}}/>
-      {ORBIT_DOTS.map((d,i)=>(
+      {[{r:60,a:0,s:6,c:"rgba(139,92,246,0.9)",d:8},{r:60,a:180,s:4,c:"rgba(196,166,255,0.6)",d:8},{r:100,a:45,s:8,c:"rgba(109,40,217,0.9)",d:13},{r:100,a:225,s:5,c:"rgba(167,110,255,0.7)",d:13},{r:100,a:135,s:4,c:"rgba(196,166,255,0.5)",d:13},{r:140,a:90,s:7,c:"rgba(139,92,246,0.8)",d:18},{r:140,a:270,s:5,c:"rgba(88,28,220,0.7)",d:18},{r:140,a:20,s:3,c:"rgba(196,166,255,0.4)",d:18}].map((d,i)=>(
         <motion.g key={i} style={{transformOrigin:"160px 160px"}} animate={{rotate:i%2===0?360:-360}} transition={{duration:d.d,repeat:Infinity,ease:"linear",delay:i*0.5}}>
-          <circle cx={d.cx} cy={d.cy} r={d.s/2} fill={d.c}/>
+          <circle cx={160+d.r*Math.cos(d.a*Math.PI/180)} cy={160+d.r*Math.sin(d.a*Math.PI/180)} r={d.s/2} fill={d.c}/>
         </motion.g>
       ))}
-      {ORBIT_LINES.map((line,i)=>(
-        <motion.line key={i} x1="160" y1="160" x2={line.x2} y2={line.y2} stroke="rgba(139,92,246,0.07)" strokeWidth="1"
+      {[0,72,144,216,288].map((angle,i)=>(
+        <motion.line key={i} x1="160" y1="160" x2={160+140*Math.cos(angle*Math.PI/180)} y2={160+140*Math.sin(angle*Math.PI/180)} stroke="rgba(139,92,246,0.07)" strokeWidth="1"
           animate={{opacity:[0.3,0.7,0.3]}} transition={{duration:3,repeat:Infinity,delay:i*0.6}}/>
       ))}
     </svg>
@@ -613,7 +590,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
                 <h3 className="mb-2 font-['Instrument_Serif'] italic text-xl text-white">{p.title}</h3>
                 <p className="mb-6 font-mono text-[11px] leading-relaxed text-white/28">{p.desc}</p>
                 {p.custom
-                  ?<p className="mb-6 font-['Instrument_Serif'] italic text-4xl text-white leading-none">Let&apos;s talk</p>
+                  ?<p className="mb-6 font-['Instrument_Serif'] italic text-4xl text-white leading-none">Let's talk</p>
                   :<><p className="mb-0.5 font-mono text-[9px] uppercase tracking-widest text-white/18">{p.setup} setup —</p>
                     <p className="mb-6 font-['Instrument_Serif'] italic leading-none text-white" style={{fontSize:"clamp(2rem,3.5vw,3rem)"}}>{p.mo}<span className="font-sans text-sm text-white/22"> / mo</span></p></>
                 }
@@ -648,11 +625,11 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
               </div>
             </motion.div>
             <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E,delay:0.15}}>
-              <blockquote className="mb-8 font-['Instrument_Serif'] italic text-[clamp(18px,2.2vw,26px)] font-light leading-[1.55] text-white/65">&ldquo;Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming.&rdquo;</blockquote>
+              <blockquote className="mb-8 font-['Instrument_Serif'] italic text-[clamp(18px,2.2vw,26px)] font-light leading-[1.55] text-white/65">"Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming."</blockquote>
               <div className="space-y-5 font-mono text-sm leading-[1.95] text-white/35">
                 <p>quazieR was founded by <span className="text-white/60">Michael Brito</span> and <span className="text-white/60">Badre Elkhammal</span> — two builders who got tired of watching great businesses lose opportunities simply because nobody picked up the phone.</p>
                 <p>After seeing countless teams burn out trying to manually respond to every lead, they built systems that quietly handle communication so owners can focus on real work.</p>
-                <p>No hype. No shortcuts. Just well-designed systems that do exactly what they&apos;re supposed to do.</p>
+                <p>No hype. No shortcuts. Just well-designed systems that do exactly what they're supposed to do.</p>
               </div>
             </motion.div>
           </div>
@@ -847,7 +824,7 @@ function AboutPage({goto}:{goto:(p:Page)=>void}){
           <Tag>About</Tag>
           <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(56px,8vw,120px)"}}>Built with<br /><em className="text-violet-300">intention.</em></h1>
           <div className="grid gap-10 md:grid-cols-[1fr_1.2fr]">
-            <p className="font-mono text-sm leading-[1.9] text-white/38">quazieR started with a simple observation: great businesses were losing customers not because of their product or service — but because they couldn&apos;t respond fast enough.</p>
+            <p className="font-mono text-sm leading-[1.9] text-white/38">quazieR started with a simple observation: great businesses were losing customers not because of their product or service — but because they couldn't respond fast enough.</p>
             <p className="font-mono text-sm leading-[1.9] text-white/38">Michael and Badre built quazieR to close that gap permanently. Not with an app that creates more to-do items, but with systems that operate in the background, silently handling communication.</p>
           </div>
         </motion.div>
@@ -885,10 +862,10 @@ function AboutPage({goto}:{goto:(p:Page)=>void}){
         </motion.div>
         <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="border-t border-white/[0.05] pt-20 text-center">
           <blockquote className="mx-auto max-w-3xl font-['Instrument_Serif'] italic font-light leading-[1.5] text-white/55" style={{fontSize:"clamp(24px,3vw,42px)"}}>
-            &ldquo;Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming.&rdquo;
+            "Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming."
           </blockquote>
           <div className="mt-8 h-px w-12 mx-auto bg-violet-500/30"/>
-          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/20">Michael &amp; Badre, quazieR</p>
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/20">Michael & Badre, quazieR</p>
         </motion.div>
         <div className="mt-24 flex justify-center">
           <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-4 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Work with us</button>
@@ -913,10 +890,10 @@ function ContactPage(){
         <div className="grid gap-16 md:grid-cols-[1fr_1.4fr]">
           <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}}>
             <Tag>Contact</Tag>
-            <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(48px,6vw,90px)"}}>Let&apos;s talk<br /><em className="text-violet-300">about your business.</em></h1>
-            <p className="mb-12 font-mono text-sm leading-[1.9] text-white/35">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
+            <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(48px,6vw,90px)"}}>Let's talk<br /><em className="text-violet-300">about your business.</em></h1>
+            <p className="mb-12 font-mono text-sm leading-[1.9] text-white/35">No pressure. No sales pitch. Just a real conversation about where you're losing time and how automation might help. Most clients are live within 48 hours.</p>
             <div className="space-y-6">
-              {[{label:"Email",value:"hello@quazier.com"},{label:"WhatsApp",value:"+1 (555) 000-0000"},{label:"Based in",value:"Available worldwide"}].map(c=>(
+              {[{label:"Email",value:"hello@brammal.com"},{label:"WhatsApp",value:"+1 (555) 000-0000"},{label:"Based in",value:"Available worldwide"}].map(c=>(
                 <div key={c.label}><p className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/22">{c.label}</p><p className="mt-1 font-mono text-sm text-white/55">{c.value}</p></div>
               ))}
             </div>
@@ -934,7 +911,7 @@ function ContactPage(){
                 <motion.div initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{duration:0.5,ease:E}}>
                   <div className="mb-6 h-px w-12 mx-auto bg-violet-500/50"/>
                   <h3 className="mb-4 font-['Instrument_Serif'] italic text-3xl text-white">Message received.</h3>
-                  <p className="font-mono text-sm text-white/35">We&apos;ll get back to you within 24 hours. Usually much sooner.</p>
+                  <p className="font-mono text-sm text-white/35">We'll get back to you within 24 hours. Usually much sooner.</p>
                 </motion.div>
               </div>
             ):(
@@ -989,7 +966,7 @@ function NotFoundPage({goto}:{goto:(p:Page)=>void}){
       <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}} className="relative">
         <p className="mb-4 font-mono text-[9px] uppercase tracking-[0.28em] text-violet-400/60">Error 404</p>
         <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(80px,14vw,200px)"}}>Lost.</h1>
-        <p className="mb-12 font-mono text-sm text-white/30">This page doesn&apos;t exist. But your leads shouldn&apos;t get this treatment — let&apos;s fix that.</p>
+        <p className="mb-12 font-mono text-sm text-white/30">This page doesn't exist. But your leads shouldn't get this treatment — let's fix that.</p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <button onClick={()=>goto("home")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Back to home</button>
           <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/40 transition hover:border-violet-400/25 hover:text-white">Contact us</button>

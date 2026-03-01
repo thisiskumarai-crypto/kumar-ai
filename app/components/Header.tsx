@@ -1,33 +1,25 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function Header() {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 w-full z-50
-                 bg-black/70 backdrop-blur
-                 px-8 md:px-24 py-6"
-    >
-      <nav className="max-w-[1100px] mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <span className="text-sm font-medium tracking-tight">
-          <span className="text-[color:var(--accent)]">kumaR</span>{" "}
-          <span className="text-white/70">ai</span>
-        </span>
+    <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+      <nav className="flex items-center gap-8 px-8 py-3 rounded-full
+        bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_0_80px_rgba(124,124,255,0.25)]">
 
-        {/* Nav */}
-        <a
-          href="#"
-          className="text-sm text-white/60 transition-all hover:text-white"
-        >
+        <span className="font-medium">brammaL</span>
+
+        <Link href="#home" className="text-white/70 hover:text-white">
+          Home
+        </Link>
+        <Link href="#pricing" className="text-white/70 hover:text-white">
+          Pricing
+        </Link>
+        <Link href="#contact" className="text-white/70 hover:text-white">
           Contact
-        </a>
+        </Link>
       </nav>
-    </motion.header>
+    </header>
   );
 }
-
