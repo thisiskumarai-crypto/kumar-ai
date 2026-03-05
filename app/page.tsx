@@ -171,10 +171,18 @@ function IllustrationVoiceWave(){
     <svg width="280" height="80" viewBox="0 0 280 80" fill="none" className="w-full max-w-[280px]">
       {bars.map(i=>{
         const x=8+i*8;
-        const bh=8+Math.sin(i*0.5)*12+Math.sin(i*0.3)*8;
+        // Clamp bh to always be positive — Math.sin can return negative values
+        const bh=Math.max(2, 8+Math.abs(Math.sin(i*0.5))*12+Math.abs(Math.sin(i*0.3))*8);
+        const h1=Math.max(1,bh);
+        const h2=Math.max(1,bh*2.2);
+        const h3=Math.max(1,bh*0.4);
+        const h4=Math.max(1,bh*1.8);
         return(
           <motion.rect key={i} x={x} width="3" rx="1.5" fill="rgba(139,92,246,0.7)"
-            animate={{height:[bh,bh*2.2,bh*0.4,bh*1.8,bh],y:[40-bh/2,40-bh*2.2/2,40-bh*0.4/2,40-bh*1.8/2,40-bh/2]}}
+            animate={{
+              height:[h1,h2,h3,h4,h1],
+              y:[40-h1/2,40-h2/2,40-h3/2,40-h4/2,40-h1/2]
+            }}
             transition={{duration:1.4+i*0.04,repeat:Infinity,ease:"easeInOut",delay:i*0.05}}/>
         );
       })}
@@ -349,19 +357,42 @@ function Footer({goto}:{goto:(p:Page)=>void}){
 
 // ─── CHAT DEMO ────────────────────────────────────────────────────────────────
 function ChatDemo(){
-  const [msgs,setMsgs]=useState<Msg[]>([FLOW[0],FLOW[1]]);
-  const [step,setStep]=useState(2);
+  const INIT:Msg={role:"ai",text:"Hi! I'm the quazieR AI. What kind of business do you run?"};
+  const [msgs,setMsgs]=useState<Msg[]>([INIT]);
+  const [input,setInput]=useState("");
   const [typing,setTyping]=useState(false);
-  const advance=()=>{
-    if(step>=FLOW.length||typing) return;
-    const cur=FLOW[step];
-    setMsgs(m=>[...m,cur]);
-    setStep(s=>s+1);
-    if(cur.role==="user"&&FLOW[step+1]?.role==="ai"){
-      setTyping(true);
-      setTimeout(()=>{setTyping(false);setMsgs(m=>[...m,FLOW[step+1]]);setStep(s=>s+1);},1300);
+  const bottomRef=useRef<HTMLDivElement>(null);
+
+  const send=async()=>{
+    const text=input.trim();
+    if(!text||typing) return;
+    setInput("");
+    const userMsg:Msg={role:"user",text};
+    const updated=[...msgs,userMsg];
+    setMsgs(updated);
+    setTyping(true);
+    try{
+      const res=await fetch("/api/chat",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          messages:updated.map(m=>({role:m.role==="ai"?"assistant":"user",content:m.text}))
+        }),
+      });
+      const data=await res.json();
+      setMsgs(m=>[...m,{role:"ai",text:data.reply||"Sorry, something went wrong."}]);
+    }catch{
+      setMsgs(m=>[...m,{role:"ai",text:"Sorry, I couldn't connect. Please try again."}]);
+    }finally{
+      setTyping(false);
     }
   };
+
+  const onKey=(e:React.KeyboardEvent)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}};
+
+  // Auto-scroll to bottom
+  useState(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"})});
+
   return(
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
@@ -369,7 +400,7 @@ function ChatDemo(){
           AI<span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-[#06060c] bg-emerald-400"/>
         </div>
         <div>
-          <p className="font-mono text-xs text-white">quazieR AI</p>
+          <p className="font-mono text-xs text-white">Summer — quazieR AI</p>
           <p className="font-mono text-[10px] text-emerald-400">Online · responds instantly</p>
         </div>
       </div>
@@ -388,12 +419,21 @@ function ChatDemo(){
             </motion.div>
           )}
         </AnimatePresence>
+        <div ref={bottomRef}/>
       </div>
-      <div className="border-t border-white/[0.07] p-4">
-        {step<FLOW.length
-          ?<button onClick={advance} disabled={typing} className="w-full rounded-lg bg-violet-600 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white transition hover:bg-violet-500 disabled:opacity-50">{FLOW[step]?.role==="user"?"Send message":"Continue"}</button>
-          :<button className="w-full rounded-lg bg-violet-600 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white hover:bg-violet-500 transition">Book a real conversation</button>
-        }
+      <div className="border-t border-white/[0.07] p-4 flex gap-2">
+        <input
+          value={input}
+          onChange={e=>setInput(e.target.value)}
+          onKeyDown={onKey}
+          placeholder="Type a message..."
+          disabled={typing}
+          className="flex-1 rounded-lg bg-white/[0.06] border border-white/[0.09] px-4 py-2.5 font-mono text-xs text-white placeholder-white/25 outline-none focus:border-violet-500/50 disabled:opacity-50 transition"
+        />
+        <button onClick={send} disabled={typing||!input.trim()}
+          className="rounded-lg bg-violet-600 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white transition hover:bg-violet-500 disabled:opacity-40">
+          Send
+        </button>
       </div>
     </div>
   );
@@ -518,7 +558,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
               <p className="mb-8 max-w-xs font-mono text-xs leading-relaxed text-white/30">Experience a real AI answering calls 24/7. Pick up the phone — it's live right now.</p>
               <div className="mb-4"><IllustrationSignalRings/></div>
               <div className="mb-6"><IllustrationVoiceWave/></div>
-              <button className="mb-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.45)] transition hover:bg-violet-500">Call now</button>
+              <a href="tel:+15186623244" className="mb-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.45)] transition hover:bg-violet-500">📞 Call now</a>
               <p className="font-mono text-[10px] text-white/18">Test our AI voice agent live</p>
             </motion.div>
           </div>
@@ -916,7 +956,7 @@ function ContactPage(){
             <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(48px,6vw,90px)"}}>Let&apos;s talk<br /><em className="text-violet-300">about your business.</em></h1>
             <p className="mb-12 font-mono text-sm leading-[1.9] text-white/35">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
             <div className="space-y-6">
-              {[{label:"Email",value:"hello@quazier.com"},{label:"WhatsApp",value:"+1 (555) 000-0000"},{label:"Based in",value:"Available worldwide"}].map(c=>(
+              {[{label:"Email",value:"quazier.ai@gmail.com"},{label:"Phone / WhatsApp",value:"(518) 662-3244"},{label:"Based in",value:"Available worldwide"}].map(c=>(
                 <div key={c.label}><p className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/22">{c.label}</p><p className="mt-1 font-mono text-sm text-white/55">{c.value}</p></div>
               ))}
             </div>
@@ -928,44 +968,25 @@ function ContactPage(){
             </div>
           </motion.div>
           <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.15}}
-            className="rounded-2xl border border-violet-500/[0.12] bg-white/[0.02] p-8 md:p-10">
-            {sent?(
-              <div className="flex h-full flex-col items-center justify-center py-16 text-center">
-                <motion.div initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{duration:0.5,ease:E}}>
-                  <div className="mb-6 h-px w-12 mx-auto bg-violet-500/50"/>
-                  <h3 className="mb-4 font-['Instrument_Serif'] italic text-3xl text-white">Message received.</h3>
-                  <p className="font-mono text-sm text-white/35">We&apos;ll get back to you within 24 hours. Usually much sooner.</p>
-                </motion.div>
-              </div>
-            ):(
-              <form onSubmit={submit} className="space-y-5">
-                <div className="grid gap-5 md:grid-cols-2">
-                  {[{name:"name",label:"Your name",type:"text",placeholder:"Alex Johnson"},{name:"email",label:"Email address",type:"email",placeholder:"alex@company.com"}].map(f=>(
-                    <div key={f.name}>
-                      <label className="mb-2 block font-mono text-[9px] uppercase tracking-[0.22em] text-white/30">{f.label}</label>
-                      <input type={f.type} name={f.name} value={(form as any)[f.name]} onChange={handle} placeholder={f.placeholder} required
-                        className="w-full rounded-lg border border-violet-500/[0.15] bg-white/[0.03] px-4 py-3 font-mono text-sm text-white placeholder-white/18 outline-none transition focus:border-violet-500/45 focus:bg-violet-500/[0.04]"/>
-                    </div>
-                  ))}
+            className="rounded-2xl border border-violet-500/[0.12] bg-white/[0.02] p-8 md:p-10 flex flex-col items-center justify-center text-center gap-8">
+            <div>
+              <div className="mb-6 h-px w-12 mx-auto bg-violet-500/50"/>
+              <h3 className="mb-4 font-['Instrument_Serif'] italic leading-[1.1] text-white" style={{fontSize:"clamp(28px,3.5vw,42px)"}}>Book a free<br/><em className="text-violet-300">20-min call.</em></h3>
+              <p className="font-mono text-sm leading-[1.9] text-white/35 max-w-sm mx-auto">Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.</p>
+            </div>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
+                <div key={t} className="flex items-center gap-3 rounded-lg border border-violet-500/[0.12] bg-white/[0.02] px-4 py-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0"/>
+                  <span className="font-mono text-xs text-white/45">{t}</span>
                 </div>
-                <div>
-                  <label className="mb-2 block font-mono text-[9px] uppercase tracking-[0.22em] text-white/30">Business type</label>
-                  <select name="business" value={form.business} onChange={handle} required className="w-full rounded-lg border border-violet-500/[0.15] bg-white/[0.03] px-4 py-3 font-mono text-sm text-white/60 outline-none transition focus:border-violet-500/45 appearance-none">
-                    <option value="" className="bg-[#06060c]">Select your industry</option>
-                    {["Real estate","Legal","Healthcare","Finance","E-commerce","Agency","Consulting","Other"].map(o=>(
-                      <option key={o} value={o} className="bg-[#06060c]">{o}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-2 block font-mono text-[9px] uppercase tracking-[0.22em] text-white/30">What can we help with?</label>
-                  <textarea name="message" value={form.message} onChange={handle} placeholder="Tell us about your business and where you're losing time..." rows={5} required
-                    className="w-full rounded-lg border border-violet-500/[0.15] bg-white/[0.03] px-4 py-3 font-mono text-sm text-white placeholder-white/18 outline-none transition focus:border-violet-500/45 resize-none"/>
-                </div>
-                <button type="submit" className="w-full rounded-lg bg-violet-600 py-4 font-mono text-xs uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] transition hover:bg-violet-500">Send message</button>
-                <p className="text-center font-mono text-[10px] text-white/18">We typically reply within a few hours</p>
-              </form>
-            )}
+              ))}
+            </div>
+            <a href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG" target="_blank" rel="noopener noreferrer"
+              className="w-full max-w-xs rounded-lg bg-violet-600 py-4 font-mono text-xs uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] transition hover:bg-violet-500 text-center block">
+              Book your free call →
+            </a>
+            <p className="font-mono text-[10px] text-white/18">Opens our scheduling page — pick any available slot</p>
           </motion.div>
         </div>
       </div>
