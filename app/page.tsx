@@ -472,7 +472,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
         <motion.div style={{y:heroY,opacity:heroO}} className="relative w-full max-w-5xl">
           <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.8,ease:E,delay:0.1}}><Tag>AI Automation Studio</Tag></motion.div>
           <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] tracking-tight text-white" style={{fontSize:"clamp(64px,10.5vw,145px)"}}>
-            <WordReveal text="Respond without limits" italic="without" delay={0.2}/>
+            <WordReveal text="quazieR, quicker and easier" italic="quicker" delay={0.2}/>
           </h1>
           <motion.p initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.65}} className="mb-6 font-['Instrument_Serif'] italic font-light text-white/45" style={{fontSize:"clamp(22px,3vw,36px)"}}>Work smarter. Not harder.</motion.p>
           <motion.p initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.82}} className="mx-auto mb-10 max-w-2xl font-mono text-sm leading-relaxed text-white/38 md:text-base">
