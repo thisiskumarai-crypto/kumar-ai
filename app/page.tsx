@@ -7,7 +7,7 @@ const E = [0.16, 1, 0.3, 1] as const;
 type Page = "home" | "pricing" | "services" | "contact" | "about" | "404";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
-const TICKER = ["AI Voice Receptionist","Lead Automation","24/7 Availability","WhatsApp & SMS","CRM Integration","Follow-Up Sequences","No Missed Calls","Instant Response","AI-Powered Websites","n8n Workflows","Custom Automation","Real-Time Alerts"];
+const TICKER = ["AI Voice Receptionist","24/7 Availability","WhatsApp & SMS","CRM Integration","Follow-Up Sequences","No Missed Calls","Instant Response","AI-Powered Websites","n8n Workflows","Custom Automation","Real-Time Alerts"];
 const STATS = [{ n: "78%", l: "of customers buy from whoever responds first." },{ n: "< 1m", l: "ideal response window for a fresh inbound lead." },{ n: "3×", l: "more revenue closed with automated follow-ups." }];
 const SERVICES = [
   { glyph: "W", title: "AI Website",            desc: "High-conversion pages connected to AI — built to capture, qualify, and route leads around the clock." },
@@ -481,6 +481,10 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
           <motion.div initial={{opacity:0,y:25}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:1.0}} className="flex flex-wrap items-center justify-center gap-4">
             <button onClick={()=>goto("pricing")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.5)] transition hover:bg-violet-500 hover:shadow-[0_0_44px_rgba(124,58,237,0.65)]">See pricing</button>
             <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.12] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/55 transition hover:border-violet-400/35 hover:bg-violet-500/[0.08] hover:text-white">Contact us</button>
+            <button onClick={()=>document.getElementById("demo-section")?.scrollIntoView({behavior:"smooth"})}
+              className="inline-flex items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/[0.08] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/[0.15] hover:text-white">
+              💬 Try our AI
+            </button>
           </motion.div>
           <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} transition={{duration:1.2,ease:E,delay:1.2}} className="mt-16 flex justify-center">
             <IllustrationOrbitNetwork/>
@@ -535,7 +539,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
       </section>
 
       {/* Demo */}
-      <section className="relative z-10 py-36 px-6">
+      <section id="demo-section" className="relative z-10 py-36 px-6">
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mb-16 text-center">
             <Tag>Live demo</Tag>
