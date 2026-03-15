@@ -1,29 +1,38 @@
 "use client";
 
-import { motion, useScroll, useTransform, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useRef, useState } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+
+type Page = "home" | "pricing" | "services" | "contact" | "about";
+type Msg  = { role: "user" | "ai"; text: string };
+
+function trackLead() {
+  if (typeof window !== "undefined" && (window as any).fbq)
+    (window as any).fbq("track", "Lead");
+}
 
 const E = [0.16, 1, 0.3, 1] as const;
-type Page = "home" | "pricing" | "services" | "contact" | "about" | "404";
-
-// helper
-function trackLead() {
-  if (typeof window !== "undefined" && (window as any).fbq) {
-    (window as any).fbq("track", "Lead");
-  }
-}
+const SF = { fontFamily:"'Satoshi', sans-serif" };
+const IF = { fontFamily:"'Instrument Serif', serif" };
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const TICKER = ["AI Voice Receptionist","24/7 Availability","WhatsApp & SMS","CRM Integration","Follow-Up Sequences","No Missed Calls","Instant Response","AI-Powered Websites","n8n Workflows","Custom Automation","Real-Time Alerts"];
-const STATS = [{ n: "78%", l: "of customers buy from whoever responds first." },{ n: "< 1m", l: "ideal response window for a fresh inbound lead." },{ n: "3×", l: "more revenue closed with automated follow-ups." }];
-const SERVICES = [
-  { glyph: "W", title: "AI Website",            desc: "High-conversion pages connected to AI — built to capture, qualify, and route leads around the clock." },
-  { glyph: "V", title: "AI Voice Receptionist", desc: "Every call answered 24/7. Qualifies leads, books appointments, routes urgent calls — in your brand's voice." },
-  { glyph: "C", title: "AI Chat & SMS",         desc: "Instant replies on WhatsApp, SMS, and web chat. Zero wait time. No missed messages." },
-  { glyph: "F", title: "Automated Follow-Ups",  desc: "Multi-step sequences that nurture leads until they buy. Runs on autopilot." },
-  { glyph: "Q", title: "Lead Qualification",    desc: "AI detects intent, asks the right questions, and sends only the best leads to your team." },
-  { glyph: "I", title: "CRM Integration",       desc: "Plugs into GoHighLevel, HubSpot, Salesforce and more. Your data stays where it lives." },
+
+const STATS = [
+  { n:"78%",  l:"of customers buy from whoever responds first." },
+  { n:"< 1m", l:"ideal response window for a fresh inbound lead." },
+  { n:"3×",   l:"more revenue closed with automated follow-ups." },
 ];
+
+const SERVICES = [
+  { n:"01", title:"AI Website",            desc:"High-conversion pages connected to AI — built to capture, qualify, and route leads around the clock.",       price:"$399/mo" },
+  { n:"02", title:"AI Voice Receptionist", desc:"Every call answered 24/7. Qualifies leads, books appointments, routes urgent calls — in your brand's voice.", price:"$699/mo" },
+  { n:"03", title:"AI Chat & SMS",         desc:"Instant replies on WhatsApp, SMS, and web chat. Zero wait time. No missed messages.",                         price:"Included" },
+  { n:"04", title:"Automated Follow-Ups",  desc:"Multi-step sequences that nurture leads until they buy. Runs on autopilot.",                                   price:"Included" },
+  { n:"05", title:"Lead Qualification",    desc:"AI detects intent, asks the right questions, and sends only the best leads to your team.",                    price:"Included" },
+  { n:"06", title:"CRM Integration",       desc:"Plugs into GoHighLevel, HubSpot, Salesforce and more. Your data stays where it lives.",                       price:"Included" },
+];
+
 const COMPARE = [
   ["Responds to leads","Instantly, 24/7","Hours or days"],
   ["Answers phone calls","Every single call","Missed when busy"],
@@ -32,12 +41,14 @@ const COMPARE = [
   ["Scales with you","Unlimited capacity","Hire more staff"],
   ["Lock-in contract","None — cancel anytime","Varies"],
 ];
+
 const PLANS = [
-  { n:"01", title:"AI Website System",              desc:"High-conversion website, lead capture, AI integrations, mobile optimization, and analytics.",                                                                        setup:"$250", mo:"$399",    features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","AI integrations","Analytics & tracking"], hot:false, custom:false },
-  { n:"02", title:"AI Voice & Chat Receptionist",   desc:"24/7 AI phone receptionist, WhatsApp & SMS automation, lead qualification, CRM integration, and reporting.",                                                         setup:"$350", mo:"$699",    features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"], hot:true, custom:false },
-  { n:"03", title:"Full AI Automation System",      desc:"Everything in AI Website + AI Voice & Chat — the complete system to capture, qualify, and follow up with every lead automatically.",                                  setup:"$500", mo:"$1,299",  features:["Everything in AI Website System","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"], hot:false, custom:false },
-  { n:"04", title:"Custom / n8n",                   desc:"Bespoke workflow automation built on n8n — engineered around your exact process.",                                                                                    setup:"Custom", mo:"Custom",features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true },
+  { n:"01", title:"AI Website System",           price:"$399",   setup:"$250",   desc:"High-conversion website, lead capture, AI integrations, mobile optimization, and analytics.",                                             features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","AI integrations","Analytics & tracking"],                                                                                                      hot:false, custom:false },
+  { n:"02", title:"AI Voice & Chat Receptionist", price:"$699",   setup:"$350",   desc:"24/7 AI phone receptionist, WhatsApp & SMS automation, lead qualification, CRM integration, and reporting.",                              features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"],                                                                                                        hot:true,  custom:false },
+  { n:"03", title:"Full AI Automation System",    price:"$1,299", setup:"$500",   desc:"Website + AI receptionist + automated follow-ups — the complete system.",                                                                  features:["Everything in AI Website System","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"],                                                                                      hot:false, custom:false },
+  { n:"04", title:"Custom / n8n",                 price:"Custom", setup:"Custom", desc:"Bespoke workflow automation built on n8n — engineered around your exact process.",                                                         features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true  },
 ];
+
 const N8N_FEATURES = [
   { title:"Workflow Architecture", desc:"We design end-to-end automation graphs tailored to your exact business logic — not templates, not shortcuts." },
   { title:"API Orchestration",     desc:"Connect any tool, any API, any database. If it has a webhook or endpoint, we can wire it in." },
@@ -46,261 +57,160 @@ const N8N_FEATURES = [
   { title:"Multi-System Sync",     desc:"CRM, ERP, billing, email, Slack, spreadsheets — all talking to each other automatically." },
   { title:"Monitoring & Alerting", desc:"Real-time visibility into every run. Alerts when something breaks. Logs for everything." },
 ];
-type Msg = { role: "user" | "ai"; text: string };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BACKGROUND
-// ═══════════════════════════════════════════════════════════════════════════════
-const ORBS = [
-  { size:700, x:"-10%", y:"-8%",  color:"rgba(109,40,217,0.28)",  blur:160, dur:26, dx:35,  dy:55  },
-  { size:520, x:"65%",  y:"-3%",  color:"rgba(167,110,255,0.18)", blur:130, dur:31, dx:-45, dy:40  },
-  { size:360, x:"40%",  y:"35%",  color:"rgba(88,28,220,0.22)",   blur:110, dur:21, dx:55,  dy:-35 },
-  { size:580, x:"-8%",  y:"52%",  color:"rgba(124,58,237,0.14)",  blur:180, dur:36, dx:65,  dy:-25 },
-  { size:240, x:"76%",  y:"60%",  color:"rgba(139,92,246,0.30)",  blur:90,  dur:18, dx:-28, dy:45  },
-  { size:420, x:"28%",  y:"-12%", color:"rgba(76,29,200,0.16)",   blur:145, dur:28, dx:22,  dy:65  },
-  { size:200, x:"88%",  y:"22%",  color:"rgba(196,166,255,0.20)", blur:70,  dur:15, dx:-18, dy:-38 },
-  { size:300, x:"12%",  y:"75%",  color:"rgba(124,58,237,0.18)",  blur:100, dur:23, dx:40,  dy:-50 },
+const STEPS = [
+  { n:"01", title:"We onboard your business",  desc:"We learn your brand, your workflow, your CRM. One call is all it takes." },
+  { n:"02", title:"We build and configure",    desc:"AI voice, chat, follow-ups — all configured to your exact process and tone." },
+  { n:"03", title:"You go live in 48 hours",   desc:"Every call answered. Every lead followed up. You focus on closing." },
 ];
-function buildPath(dx:number,dy:number,seed:number){
-  const s=seed*0.37;
-  return { x:[0,dx*0.4,dx*0.8,dx,dx*0.7,dx*0.2,-dx*0.3,-dx*0.6,-dx*0.4,0], y:[0,dy*0.3,dy*0.7,dy*0.5+s,-dy*0.2,-dy*0.7,-dy,-dy*0.5+s,-dy*0.1,0] };
+
+const FAQS = [
+  { q:"How fast can I go live?",               a:"Most clients are fully live within 48 hours of onboarding. The Custom plan may take longer depending on workflow complexity." },
+  { q:"Is there a long-term commitment?",      a:"No. All plans are month-to-month. Cancel at any time with no penalty." },
+  { q:"Can I upgrade or change plans later?",  a:"Yes. You can move between plans at any time. Changes take effect on your next billing cycle." },
+  { q:"What's included in the setup fee?",     a:"The setup fee covers system configuration, AI training on your business, integration testing, and go-live support." },
+  { q:"Does the AI sound like a real person?", a:"Yes. Our voice AI is trained to match your brand's tone and handles natural conversation including interruptions and follow-up questions." },
+];
+
+// ─── qZ LOGO ──────────────────────────────────────────────────────────────────
+function QZLogo({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size * 0.7} viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="38" r="20" stroke="#111" strokeWidth="12" fill="none"/>
+      <line x1="52" y1="38" x2="52" y2="72" stroke="#111" strokeWidth="12" strokeLinecap="round"/>
+      <line x1="68" y1="16" x2="104" y2="16" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+      <line x1="104" y1="16" x2="68" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+      <line x1="68" y1="68" x2="104" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+    </svg>
+  );
 }
-function Background(){
-  const reduced=useReducedMotion();
-  return(
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <div className="absolute inset-0" style={{background:"radial-gradient(ellipse 90% 70% at 50% 10%,rgba(76,29,149,0.15) 0%,transparent 70%)"}}/>
-      {ORBS.map((o,i)=>{
-        const p=buildPath(o.dx,o.dy,i*13);
-        return(
-          <motion.div key={i} style={{position:"absolute",width:o.size,height:o.size,left:o.x,top:o.y,borderRadius:"50%",background:o.color,filter:`blur(${o.blur}px)`,willChange:"transform"}}
-            animate={reduced?{}:{x:p.x,y:p.y,scale:[1,1.08,0.96,1.05,0.98,1.1,0.95,1.04,1,1],opacity:[0.7,1,0.78,0.95,0.85,1,0.8,0.92,0.75,0.7]}}
-            transition={{duration:o.dur,repeat:Infinity,ease:"easeInOut",delay:i*1.4,times:[0,0.11,0.22,0.33,0.44,0.55,0.66,0.77,0.88,1]}}/>
-        );
-      })}
-      <div className="absolute inset-0 opacity-[0.022]" style={{backgroundImage:"linear-gradient(rgba(139,92,246,1) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,1) 1px,transparent 1px)",backgroundSize:"90px 90px"}}/>
-      <motion.div style={{position:"absolute",top:0,bottom:0,width:1,background:"linear-gradient(to bottom,transparent,rgba(139,92,246,0.15) 20%,rgba(196,166,255,0.28) 50%,rgba(139,92,246,0.15) 80%,transparent)",filter:"blur(2px)",left:"30%"}}
-        animate={{left:["8%","92%","8%"],opacity:[0,0.7,0.15,0.7,0]}} transition={{duration:22,repeat:Infinity,ease:"easeInOut",delay:3}}/>
-      {Array.from({length:14},(_,i)=>(
-        <motion.div key={`p${i}`} style={{position:"absolute",width:1.5+(i%3)*0.8,height:1.5+(i%3)*0.8,borderRadius:"50%",background:i%3===0?"rgba(196,166,255,0.7)":i%3===1?"rgba(139,92,246,0.5)":"rgba(255,255,255,0.3)",left:`${6+i*6.8}%`,top:`${12+((i*17)%72)}%`,filter:"blur(0.4px)"}}
-          animate={reduced?{}:{y:[0,-(60+i*7)*0.5,-(60+i*7),-(60+i*7)*0.7,0],x:[0,(i%2===0?1:-1)*(12+(i%5)*8)*0.6,(i%2===0?1:-1)*(12+(i%5)*8),(i%2===0?1:-1)*(12+(i%5)*8)*0.3,0],opacity:[0,0.9,0.5,0.75,0]}}
-          transition={{duration:9+i*1.8,repeat:Infinity,ease:"easeInOut",delay:i*1.6}}/>
+
+// ─── MOUSE FOLLOWER CURSOR ────────────────────────────────────────────────────
+function CursorGlow() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 80, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 80, damping: 20 });
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  return (
+    <motion.div
+      style={{ x: springX, y: springY, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999, width:400, height:400, borderRadius:"50%",
+        background:"radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)", filter:"blur(0px)" }}
+    />
+  );
+}
+
+// ─── FLOATING PARTICLES ───────────────────────────────────────────────────────
+function FloatingParticles() {
+  const particles = Array.from({ length: 18 }, (_, i) => ({
+    id: i,
+    x: `${8 + i * 5.2}%`,
+    y: `${10 + ((i * 23) % 75)}%`,
+    size: 2 + (i % 3),
+    dur: 6 + i * 1.1,
+    delay: i * 0.4,
+  }));
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex:1 }}>
+      {particles.map(p => (
+        <motion.div key={p.id}
+          style={{ position:"absolute", left:p.x, top:p.y, width:p.size, height:p.size, borderRadius:"50%", background:`rgba(124,58,237,${0.2 + (p.id%3)*0.12})` }}
+          animate={{ y:[0, -(30 + p.id*4), 0], opacity:[0, 0.7, 0] }}
+          transition={{ duration:p.dur, repeat:Infinity, delay:p.delay, ease:"easeInOut" }}
+        />
       ))}
-      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 50% 40%,transparent 25%,rgba(4,4,8,0.55) 70%,rgba(4,4,8,0.88) 100%)",zIndex:1}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:"20%",background:"linear-gradient(to top,rgba(4,4,8,0.8),transparent)",zIndex:1}}/>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SVG ILLUSTRATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-const ORBIT_LINES = [0, 72, 144, 216, 288].map((angle) => ({
-  x2: parseFloat((160 + 140 * Math.cos((angle * Math.PI) / 180)).toFixed(4)),
-  y2: parseFloat((160 + 140 * Math.sin((angle * Math.PI) / 180)).toFixed(4)),
-}));
-
-const ORBIT_DOTS = [
-  {r:60,  a:0,   s:6, c:"rgba(139,92,246,0.9)",   d:8},
-  {r:60,  a:180, s:4, c:"rgba(196,166,255,0.6)",  d:8},
-  {r:100, a:45,  s:8, c:"rgba(109,40,217,0.9)",   d:13},
-  {r:100, a:225, s:5, c:"rgba(167,110,255,0.7)",  d:13},
-  {r:100, a:135, s:4, c:"rgba(196,166,255,0.5)",  d:13},
-  {r:140, a:90,  s:7, c:"rgba(139,92,246,0.8)",   d:18},
-  {r:140, a:270, s:5, c:"rgba(88,28,220,0.7)",    d:18},
-  {r:140, a:20,  s:3, c:"rgba(196,166,255,0.4)",  d:18},
-].map((d) => ({
-  ...d,
-  cx: parseFloat((160 + d.r * Math.cos((d.a * Math.PI) / 180)).toFixed(4)),
-  cy: parseFloat((160 + d.r * Math.sin((d.a * Math.PI) / 180)).toFixed(4)),
-}));
-
-function IllustrationOrbitNetwork(){
-  return(
-    <svg width="320" height="320" viewBox="0 0 320 320" fill="none" className="w-full max-w-[320px]">
-      {[60,100,140].map((r,i)=>(
-        <motion.circle key={r} cx="160" cy="160" r={r} stroke="rgba(139,92,246,0.15)" strokeWidth="1" strokeDasharray="4 6"
-          animate={{rotate:i%2===0?360:-360}} transition={{duration:20+i*8,repeat:Infinity,ease:"linear"}} style={{transformOrigin:"160px 160px"}}/>
-      ))}
-      <motion.circle cx="160" cy="160" r="18" fill="rgba(109,40,217,0.3)" stroke="rgba(139,92,246,0.6)" strokeWidth="1.5"
-        animate={{scale:[1,1.12,1]}} transition={{duration:3,repeat:Infinity}} style={{transformOrigin:"160px 160px"}}/>
-      <motion.circle cx="160" cy="160" r="6" fill="rgba(196,166,255,0.9)"
-        animate={{scale:[1,1.3,1]}} transition={{duration:2,repeat:Infinity}} style={{transformOrigin:"160px 160px"}}/>
-      {ORBIT_DOTS.map((d,i)=>(
-        <motion.g key={i} style={{transformOrigin:"160px 160px"}} animate={{rotate:i%2===0?360:-360}} transition={{duration:d.d,repeat:Infinity,ease:"linear",delay:i*0.5}}>
-          <circle cx={d.cx} cy={d.cy} r={d.s/2} fill={d.c}/>
-        </motion.g>
-      ))}
-      {ORBIT_LINES.map((line,i)=>(
-        <motion.line key={i} x1="160" y1="160" x2={line.x2} y2={line.y2} stroke="rgba(139,92,246,0.07)" strokeWidth="1"
-          animate={{opacity:[0.3,0.7,0.3]}} transition={{duration:3,repeat:Infinity,delay:i*0.6}}/>
-      ))}
-    </svg>
-  );
-}
-
-function IllustrationDataFlow(){
-  const nodes=[{cx:40,label:"Lead"},{cx:140,label:"AI"},{cx:240,label:"CRM"},{cx:320,label:"Done"}];
-  return(
-    <svg width="360" height="130" viewBox="0 0 360 130" fill="none" className="w-full max-w-[360px]">
-      {nodes.map((n,i)=>(
-        <g key={i}>
-          <motion.circle cx={n.cx} cy="65" r="24" fill="rgba(109,40,217,0.2)" stroke="rgba(139,92,246,0.5)" strokeWidth="1.5"
-            animate={{scale:[1,1.08,1]}} transition={{duration:2.5,repeat:Infinity,delay:i*0.5}} style={{transformOrigin:`${n.cx}px 65px`}}/>
-          <text x={n.cx} y="69" textAnchor="middle" fill="rgba(196,166,255,0.8)" fontSize="9" fontFamily="monospace">{n.label}</text>
-        </g>
-      ))}
-      {[0,1,2].map(j=>(
-        <motion.circle key={j} cy="65" r="4" fill="rgba(196,166,255,0.9)"
-          animate={{cx:[40,140,240,320],opacity:[0,1,1,0]}} transition={{duration:3,repeat:Infinity,ease:"easeInOut",delay:j*1}}/>
-      ))}
-      {[[64,116],[164,216],[264,296]].map(([x1,x2],i)=>(
-        <line key={i} x1={x1} y1="65" x2={x2} y2="65" stroke="rgba(139,92,246,0.2)" strokeWidth="1" strokeDasharray="4 4"/>
-      ))}
-    </svg>
-  );
-}
-
-function IllustrationVoiceWave(){
-  const bars=Array.from({length:32},(_,i)=>i);
-  return(
-    <svg width="280" height="80" viewBox="0 0 280 80" fill="none" className="w-full max-w-[280px]">
-      {bars.map(i=>{
-        const x=8+i*8;
-        const bh=Math.max(2, 8+Math.abs(Math.sin(i*0.5))*12+Math.abs(Math.sin(i*0.3))*8);
-        const h1=Math.max(1,bh);
-        const h2=Math.max(1,bh*2.2);
-        const h3=Math.max(1,bh*0.4);
-        const h4=Math.max(1,bh*1.8);
-        return(
-          <motion.rect key={i} x={x} width="3" rx="1.5" fill="rgba(139,92,246,0.7)"
-            animate={{height:[h1,h2,h3,h4,h1],y:[40-h1/2,40-h2/2,40-h3/2,40-h4/2,40-h1/2]}}
-            transition={{duration:1.4+i*0.04,repeat:Infinity,ease:"easeInOut",delay:i*0.05}}/>
-        );
-      })}
-    </svg>
-  );
-}
-
-function IllustrationSignalRings(){
-  return(
-    <svg width="180" height="180" viewBox="0 0 180 180" fill="none" className="w-full max-w-[180px]">
-      {[20,38,56,74].map((r,i)=>(
-        <motion.circle key={r} cx="90" cy="90" r={r} stroke="rgba(139,92,246,0.55)" strokeWidth="1"
-          animate={{scale:[1,1.5+i*0.1],opacity:[0.7,0]}} transition={{duration:2.4,repeat:Infinity,ease:"easeOut",delay:i*0.5}} style={{transformOrigin:"90px 90px"}}/>
-      ))}
-      <circle cx="90" cy="90" r="16" fill="rgba(109,40,217,0.35)" stroke="rgba(139,92,246,0.7)" strokeWidth="1.5"/>
-      <motion.circle cx="90" cy="90" r="6" fill="rgba(196,166,255,0.9)"
-        animate={{scale:[1,1.2,1]}} transition={{duration:1.5,repeat:Infinity}} style={{transformOrigin:"90px 90px"}}/>
-    </svg>
-  );
-}
-
-function IllustrationDotGrid(){
-  const dots:Array<{r:number;c:number;key:string}>=[];
-  for(let r=0;r<7;r++) for(let c=0;c<10;c++) dots.push({r,c,key:`${r}-${c}`});
-  return(
-    <svg width="220" height="154" viewBox="0 0 220 154" fill="none" className="w-full max-w-[220px]">
-      {dots.map(({r,c,key})=>(
-        <motion.circle key={key} cx={11+c*22} cy={11+r*22} r="3" fill="rgba(139,92,246,0.5)"
-          animate={{opacity:[0.2,1,0.2],scale:[0.7,1.3,0.7]}} transition={{duration:2.5,repeat:Infinity,delay:(r+c)*0.12}} style={{transformOrigin:`${11+c*22}px ${11+r*22}px`}}/>
-      ))}
-    </svg>
-  );
-}
-
-function IllustrationWorkflow(){
-  const nodes=[
-    {x:20, y:55,  label:"Trigger"},
-    {x:110,y:15,  label:"Filter"},
-    {x:110,y:95,  label:"Parse"},
-    {x:200,y:55,  label:"CRM"},
-    {x:280,y:25,  label:"Notify"},
-    {x:280,y:85,  label:"Log"},
-  ];
-  const edges=[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5]];
-  return(
-    <svg width="340" height="130" viewBox="0 0 340 130" fill="none" className="w-full max-w-[340px]">
-      {edges.map(([a,b],i)=>(
-        <motion.line key={i} x1={nodes[a].x+28} y1={nodes[a].y+14} x2={nodes[b].x} y2={nodes[b].y+14}
-          stroke="rgba(139,92,246,0.25)" strokeWidth="1.5" strokeDasharray="4 4"
-          animate={{strokeDashoffset:[0,-16]}} transition={{duration:1.2,repeat:Infinity,ease:"linear"}}/>
-      ))}
-      {nodes.map((n,i)=>(
-        <motion.g key={i} animate={{y:[0,-2,0]}} transition={{duration:2.5,repeat:Infinity,delay:i*0.3}}>
-          <rect x={n.x} y={n.y} width="56" height="28" rx="6" fill="rgba(109,40,217,0.15)" stroke="rgba(139,92,246,0.5)" strokeWidth="1"/>
-          <text x={n.x+28} y={n.y+17} textAnchor="middle" fill="rgba(196,166,255,0.8)" fontSize="8" fontFamily="monospace">{n.label}</text>
-        </motion.g>
-      ))}
-      <motion.circle r="4" fill="rgba(196,166,255,0.9)"
-        animate={{cx:[20,110,200,280],cy:[69,29,69,39],opacity:[0,1,1,0]}} transition={{duration:2.5,repeat:Infinity,ease:"easeInOut"}}/>
-    </svg>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHARED
-// ═══════════════════════════════════════════════════════════════════════════════
-function Tag({children}:{children:string}){
-  return(
-    <p className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-violet-400">
-      <span className="inline-block h-px w-5 bg-violet-400/50"/>{children}
-    </p>
-  );
-}
-function WordReveal({text,italic,delay=0}:{text:string;italic?:string;delay?:number}){
-  return(
-    <span>
-      {text.split(" ").map((word,i)=>(
-        <motion.span key={i} className={`inline-block ${word===italic?"font-normal italic text-violet-300":""}`} style={{marginRight:"0.22em"}}
-          initial={{opacity:0,y:70}} animate={{opacity:1,y:0}} transition={{duration:1.1,ease:E,delay:delay+i*0.1}}>{word}</motion.span>
-      ))}
-    </span>
+// ─── BACKGROUND ───────────────────────────────────────────────────────────────
+function Background() {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(160deg,#fdfbff 0%,#f3ecff 20%,#eaf0ff 45%,#fdeef6 70%,#fffbf0 100%)" }}/>
+      <motion.div animate={{ x:[0,30,-20,0], y:[0,-20,15,0], scale:[1,1.05,0.97,1] }} transition={{ duration:22, repeat:Infinity, ease:"easeInOut" }}
+        style={{ position:"absolute", top:"-15%", left:"55%", width:750, height:750, borderRadius:"50%", background:"radial-gradient(circle,rgba(167,110,255,0.2) 0%,transparent 70%)", filter:"blur(70px)" }}/>
+      <motion.div animate={{ x:[0,-25,20,0], y:[0,20,-15,0], scale:[1,0.96,1.04,1] }} transition={{ duration:27, repeat:Infinity, ease:"easeInOut", delay:3 }}
+        style={{ position:"absolute", top:"25%", left:"-12%", width:650, height:650, borderRadius:"50%", background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 70%)", filter:"blur(65px)" }}/>
+      <motion.div animate={{ x:[0,20,-30,0], y:[0,-15,25,0], scale:[1,1.08,0.95,1] }} transition={{ duration:20, repeat:Infinity, ease:"easeInOut", delay:6 }}
+        style={{ position:"absolute", bottom:"-15%", right:"5%", width:850, height:850, borderRadius:"50%", background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 70%)", filter:"blur(80px)" }}/>
+      {/* Grid */}
+      <div style={{ position:"absolute", inset:0, opacity:0.018, backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)", backgroundSize:"80px 80px" }}/>
+      {/* Noise */}
+      <div style={{ position:"absolute", inset:0, opacity:0.022, backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat:"repeat", backgroundSize:"128px 128px" }}/>
+    </div>
   );
 }
 
 // ─── NAV ──────────────────────────────────────────────────────────────────────
-function Nav({current,goto}:{current:Page;goto:(p:Page)=>void}){
-  const [open,setOpen]=useState(false);
-  const links:[string,Page][]=[["Services","services"],["Pricing","pricing"],["About","about"],["Contact","contact"]];
-  return(
+function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
+  const [open, setOpen] = useState(false);
+  const links: [string,Page][] = [["Services","services"],["Pricing","pricing"],["About","about"],["Contact","contact"]];
+  const blurPill = { background:"rgba(255,255,255,0.55)", backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.85)" };
+
+  return (
     <>
-      <motion.header initial={{opacity:0,y:-16}} animate={{opacity:1,y:0}} transition={{duration:0.8,ease:E}} className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-max">
-        <nav className="hidden md:flex items-center gap-1 px-2 py-2 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/[0.12] shadow-[0_0_60px_rgba(124,58,237,0.25),inset_0_1px_0_rgba(255,255,255,0.08)]">
-          <button onClick={()=>goto("home")} className="px-4 py-1.5 font-['Instrument_Serif'] italic text-white text-base hover:text-violet-300 transition-colors">quazieR</button>
-          <div className="w-px h-4 bg-white/[0.12] mx-1"/>
+      <motion.div initial={{ opacity:0, y:-24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.9, ease:E }}
+        className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-max">
+        {/* Desktop pill */}
+        <nav className="hidden md:flex items-center gap-1 px-2 py-2 rounded-full"
+          style={{ ...blurPill, boxShadow:"0 8px 40px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.95) inset" }}>
+          <motion.button onClick={()=>goto("home")} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+            className="flex items-center px-2 py-1.5 rounded-full" style={{ background:"rgba(255,255,255,0.5)" }}>
+            <QZLogo size={34}/>
+          </motion.button>
+          <div style={{ width:1, height:20, background:"rgba(0,0,0,0.09)", margin:"0 4px" }}/>
           {links.map(([label,page])=>(
-            <button key={page} onClick={()=>goto(page)}
-              className={`px-4 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-[0.18em] transition-all ${current===page?"bg-violet-600/20 text-white border border-violet-500/30":"text-white/45 hover:text-white hover:bg-white/[0.05]"}`}>
+            <motion.button key={page} onClick={()=>goto(page)} style={{ ...SF, ...blurPill }}
+              whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${current===page?"text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-900"}`}
+              {...(current===page ? { style:{ ...SF, background:"rgba(255,255,255,0.9)", boxShadow:"0 2px 10px rgba(0,0,0,0.08)" }} : { style:{ ...SF, background:"transparent" }})}>
               {label}
-            </button>
+            </motion.button>
           ))}
-          <div className="w-px h-4 bg-white/[0.12] mx-1"/>
-          <button onClick={()=>{ trackLead(); goto("contact"); }} className="px-4 py-1.5 rounded-full bg-violet-600 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 shadow-[0_0_18px_rgba(124,58,237,0.45)]">Get started</button>
+          <div style={{ width:1, height:20, background:"rgba(0,0,0,0.09)", margin:"0 4px" }}/>
+          <motion.button onClick={()=>{ trackLead(); goto("contact"); }}
+            whileHover={{ scale:1.06, boxShadow:"0 6px 24px rgba(0,0,0,0.3)" }} whileTap={{ scale:0.96 }}
+            style={{ ...SF, background:"linear-gradient(135deg,#111 0%,#2d2d2d 100%)", boxShadow:"0 3px 14px rgba(0,0,0,0.22)" }}
+            className="px-5 py-2.5 rounded-full text-sm font-semibold text-white">
+            Get started
+          </motion.button>
         </nav>
-        <nav className="flex md:hidden items-center gap-3 px-4 py-2.5 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/[0.12] shadow-[0_0_40px_rgba(124,58,237,0.2)]">
-          <button onClick={()=>goto("home")} className="font-['Instrument_Serif'] italic text-white text-base">quazieR</button>
+
+        {/* Mobile pill */}
+        <nav className="flex md:hidden items-center gap-3 px-4 py-2.5 rounded-full"
+          style={{ ...blurPill, boxShadow:"0 6px 28px rgba(0,0,0,0.08)" }}>
+          <button onClick={()=>goto("home")}><QZLogo size={28}/></button>
           <div className="flex-1"/>
-          <button onClick={()=>setOpen(!open)} className="flex flex-col gap-1 p-1">
-            <motion.span animate={{rotate:open?45:0,y:open?5:0}} className="block h-px w-5 bg-white origin-center"/>
-            <motion.span animate={{opacity:open?0:1}} className="block h-px w-5 bg-white"/>
-            <motion.span animate={{rotate:open?-45:0,y:open?-5:0}} className="block h-px w-5 bg-white origin-center"/>
+          <button onClick={()=>setOpen(!open)} className="flex flex-col gap-1.5 p-1">
+            <motion.span animate={{ rotate:open?45:0, y:open?6:0 }} className="block h-0.5 w-5 bg-gray-800 origin-center"/>
+            <motion.span animate={{ opacity:open?0:1 }} className="block h-0.5 w-5 bg-gray-800"/>
+            <motion.span animate={{ rotate:open?-45:0, y:open?-6:0 }} className="block h-0.5 w-5 bg-gray-800 origin-center"/>
           </button>
         </nav>
-      </motion.header>
+      </motion.div>
+
       <AnimatePresence>
-        {open&&(
-          <motion.div initial={{opacity:0,y:-8,scale:0.97}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-8,scale:0.97}} transition={{duration:0.25,ease:E}}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-40 w-[min(300px,88vw)] rounded-2xl border border-white/[0.09] bg-[#06060c]/95 backdrop-blur-xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] md:hidden">
-            <div className="flex flex-col gap-1">
+        {open && (
+          <motion.div initial={{ opacity:0, y:-12, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, y:-12, scale:0.95 }}
+            transition={{ duration:0.22, ease:E }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-40 w-[min(320px,90vw)] rounded-3xl md:hidden"
+            style={{ background:"rgba(255,255,255,0.9)", backdropFilter:"blur(28px)", border:"1px solid rgba(255,255,255,0.95)", boxShadow:"0 24px 64px rgba(0,0,0,0.1)" }}>
+            <div className="p-3 flex flex-col gap-1">
               {links.map(([label,page])=>(
-                <button key={page} onClick={()=>{goto(page);setOpen(false);}}
-                  className={`w-full rounded-xl px-4 py-3 text-left font-mono text-xs uppercase tracking-[0.18em] transition-colors ${current===page?"bg-violet-600/15 text-white":"text-white/45 hover:bg-white/[0.03] hover:text-white"}`}>
-                  {label}
-                </button>
+                <motion.button key={page} onClick={()=>{ goto(page); setOpen(false); }} style={SF}
+                  whileHover={{ x:5 }} className="text-left px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-white hover:text-gray-900 transition-colors">{label}</motion.button>
               ))}
-              <div className="my-1 h-px bg-white/[0.06]"/>
-              <button onClick={()=>{ trackLead(); goto("contact"); setOpen(false); }} className="w-full rounded-xl bg-violet-600 px-4 py-3 font-mono text-xs uppercase tracking-[0.18em] text-white hover:bg-violet-500 transition-colors">Get started</button>
+              <div className="my-1.5 h-px" style={{ background:"rgba(0,0,0,0.06)" }}/>
+              <motion.button onClick={()=>{ trackLead(); goto("contact"); setOpen(false); }}
+                whileTap={{ scale:0.97 }} style={{ ...SF, background:"linear-gradient(135deg,#111,#333)" }}
+                className="px-4 py-3 rounded-2xl text-sm font-semibold text-white text-center">Get started</motion.button>
             </div>
           </motion.div>
         )}
@@ -310,37 +220,59 @@ function Nav({current,goto}:{current:Page;goto:(p:Page)=>void}){
 }
 
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
-function Footer({goto}:{goto:(p:Page)=>void}){
-  return(
-    <footer className="relative z-10 mt-20 border-t border-violet-500/[0.12]">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3" style={{background:"linear-gradient(to right,transparent,rgba(139,92,246,0.4),transparent)"}}/>
+function Footer({ goto }: { goto:(p:Page)=>void }) {
+  return (
+    <footer style={{ borderTop:"1px solid rgba(0,0,0,0.07)", background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)" }}>
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-12 grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr] mb-12">
           <div>
-            <p className="mb-3 font-['Instrument_Serif'] italic text-xl text-white">quazieR</p>
-            <p className="mb-6 max-w-xs font-mono text-xs leading-relaxed text-white/28">AI automation systems that respond, follow up, and convert — without you lifting a finger.</p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"/>
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"/>
-              </span>
-              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/35">All systems operational</span>
+            <div className="mb-5"><QZLogo size={44}/></div>
+            <p style={SF} className="text-sm text-gray-500 leading-relaxed max-w-xs mb-6">AI automation systems that respond, follow up, and convert — without you lifting a finger.</p>
+            {/* Social */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <motion.a href="https://www.instagram.com/quazier.ai" target="_blank" rel="noopener noreferrer"
+                whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                style={{ background:"rgba(255,255,255,0.7)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.08)" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" stroke="none"/>
+                </svg>
+                <span style={SF}>@quazier.ai</span>
+              </motion.a>
+              <motion.a href="https://www.facebook.com/profile.php?id=61585053252637" target="_blank" rel="noopener noreferrer"
+                whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                style={{ background:"rgba(255,255,255,0.7)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.08)" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                </svg>
+                <span style={SF}>Facebook</span>
+              </motion.a>
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)" }}>
+              <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"/><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"/></span>
+              <span style={SF} className="text-xs font-medium text-emerald-700">All systems operational</span>
             </div>
           </div>
-          {[{title:"Product",links:[{l:"Services",p:"services"},{l:"Pricing",p:"pricing"}]},{title:"Company",links:[{l:"About",p:"about"},{l:"Contact",p:"contact"}]},{title:"Legal",links:[{l:"Privacy",p:"home"},{l:"Terms",p:"home"}]}].map(col=>(
+          {[
+            { title:"Product", links:[{l:"Services",p:"services"},{l:"Pricing",p:"pricing"}] },
+            { title:"Company", links:[{l:"About",p:"about"},{l:"Contact",p:"contact"}] },
+            { title:"Legal",   links:[{l:"Privacy",p:"home"},{l:"Terms",p:"home"}] },
+          ].map(col=>(
             <div key={col.title}>
-              <p className="mb-4 font-mono text-[9px] uppercase tracking-[0.22em] text-white/22">{col.title}</p>
+              <p style={SF} className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">{col.title}</p>
               <div className="flex flex-col gap-2.5">
                 {col.links.map(lnk=>(
-                  <button key={lnk.l} onClick={()=>goto(lnk.p as Page)} className="w-fit font-mono text-xs text-white/38 hover:text-white transition-colors">{lnk.l}</button>
+                  <motion.button key={lnk.l} onClick={()=>goto(lnk.p as Page)} style={SF} whileHover={{ x:3 }}
+                    className="w-fit text-sm text-gray-500 hover:text-gray-900 transition-colors">{lnk.l}</motion.button>
                 ))}
               </div>
             </div>
           ))}
         </div>
-        <div className="flex flex-col gap-3 border-t border-white/[0.05] pt-8 md:flex-row md:items-center md:justify-between">
-          <p className="font-mono text-[10px] text-white/18">© {new Date().getFullYear()} quazieR. All rights reserved.</p>
-          <p className="font-mono text-[10px] text-white/12">Built by <span className="text-white/25">Michael Brito</span> & <span className="text-white/25">Badre Elkhammal</span></p>
+        <div className="flex flex-col gap-2 pt-8 md:flex-row md:items-center md:justify-between" style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
+          <p style={SF} className="text-xs text-gray-400">© {new Date().getFullYear()} quazieR. All rights reserved.</p>
+          <p style={SF} className="text-xs text-gray-400">Built by <span className="text-gray-600">Michael Brito</span> & <span className="text-gray-600">Badre Elkhammal</span></p>
         </div>
       </div>
     </footer>
@@ -348,346 +280,454 @@ function Footer({goto}:{goto:(p:Page)=>void}){
 }
 
 // ─── CHAT DEMO ────────────────────────────────────────────────────────────────
-function ChatDemo(){
-  const INIT:Msg={role:"ai",text:"Hi! I'm the quazieR AI. What kind of business do you run?"};
-  const [msgs,setMsgs]=useState<Msg[]>([INIT]);
-  const [input,setInput]=useState("");
-  const [typing,setTyping]=useState(false);
-  const bottomRef=useRef<HTMLDivElement>(null);
+function ChatDemo() {
+  const INIT: Msg = { role:"ai", text:"Hi! I'm the quazieR AI. What kind of business do you run?" };
+  const [msgs, setMsgs] = useState<Msg[]>([INIT]);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const send=async()=>{
-    const text=input.trim();
-    if(!text||typing) return;
+  const send = async () => {
+    const text = input.trim();
+    if (!text || typing) return;
     setInput("");
-    const userMsg:Msg={role:"user",text};
-    const updated=[...msgs,userMsg];
+    const userMsg: Msg = { role:"user", text };
+    const updated = [...msgs, userMsg];
     setMsgs(updated);
     setTyping(true);
-    try{
-      const res=await fetch("/api/chat",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          messages:updated.map(m=>({role:m.role==="ai"?"assistant":"user",content:m.text}))
-        }),
-      });
-      const data=await res.json();
-      setMsgs(m=>[...m,{role:"ai",text:data.reply||"Sorry, something went wrong."}]);
-    }catch{
-      setMsgs(m=>[...m,{role:"ai",text:"Sorry, I couldn't connect. Please try again."}]);
-    }finally{
-      setTyping(false);
-    }
+    try {
+      const res = await fetch("/api/chat", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ messages:updated.map(m=>({ role:m.role==="ai"?"assistant":"user", content:m.text })) }) });
+      const data = await res.json();
+      setMsgs(m=>[...m,{ role:"ai", text:data.reply||"Sorry, something went wrong." }]);
+    } catch {
+      setMsgs(m=>[...m,{ role:"ai", text:"Sorry, I couldn't connect. Please try again." }]);
+    } finally { setTyping(false); }
   };
 
-  const onKey=(e:React.KeyboardEvent)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}};
-
-  useState(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"})});
-
-  return(
+  return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-violet-500/25 bg-violet-600/15 font-mono text-[9px] text-violet-400">
-          AI<span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-[#06060c] bg-emerald-400"/>
+      <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }}>
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-full text-white text-xs font-bold" style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}>
+          AI<span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400"/>
         </div>
         <div>
-          <p className="font-mono text-xs text-white">Summer — quazieR AI</p>
-          <p className="font-mono text-[10px] text-emerald-400">Online · responds instantly</p>
+          <p style={SF} className="text-sm font-semibold text-gray-900">Summer — quazieR AI</p>
+          <p style={SF} className="text-xs text-emerald-600">Online · responds instantly</p>
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
         <AnimatePresence>
           {msgs.map((m,i)=>(
-            <motion.div key={i} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.35}} className={`flex ${m.role==="user"?"justify-end":"justify-start"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 font-mono text-xs leading-relaxed ${m.role==="user"?"rounded-br-sm bg-violet-600 text-white":"rounded-bl-sm bg-white/[0.07] text-white/80"}`}>{m.text}</div>
+            <motion.div key={i} initial={{ opacity:0, y:10, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.3, ease:E }}
+              className={`flex ${m.role==="user"?"justify-end":"justify-start"}`}>
+              <div style={{ ...SF, ...(m.role==="user" ? { background:"linear-gradient(135deg,#7c3aed,#a855f7)" } : { background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.06)" }) }}
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role==="user"?"rounded-br-sm text-white":"rounded-bl-sm text-gray-700"}`}>
+                {m.text}
+              </div>
             </motion.div>
           ))}
-          {typing&&(
-            <motion.div key="typing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white/[0.07] px-4 py-3">
-                {[0,1,2].map(j=><motion.span key={j} className="h-1.5 w-1.5 rounded-full bg-white/35" animate={{y:[0,-4,0]}} transition={{duration:0.7,repeat:Infinity,delay:j*0.15}}/>)}
+          {typing && (
+            <motion.div key="typing" initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }} className="flex justify-start">
+              <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm px-4 py-3" style={{ background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.06)" }}>
+                {[0,1,2].map(j=><motion.span key={j} className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y:[0,-5,0] }} transition={{ duration:0.6, repeat:Infinity, delay:j*0.15 }}/>)}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
         <div ref={bottomRef}/>
       </div>
-      <div className="border-t border-white/[0.07] p-4 flex gap-2">
-        <input
-          value={input}
-          onChange={e=>setInput(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="Type a message..."
-          disabled={typing}
-          className="flex-1 rounded-lg bg-white/[0.06] border border-white/[0.09] px-4 py-2.5 font-mono text-xs text-white placeholder-white/25 outline-none focus:border-violet-500/50 disabled:opacity-50 transition"
-        />
-        <button onClick={send} disabled={typing||!input.trim()}
-          className="rounded-lg bg-violet-600 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white transition hover:bg-violet-500 disabled:opacity-40">
-          Send
-        </button>
+      <div className="p-4 flex gap-2" style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }}}
+          placeholder="Type a message..." disabled={typing}
+          style={{ ...SF, background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)" }}
+          className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition disabled:opacity-50"/>
+        <motion.button onClick={send} disabled={typing||!input.trim()} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+          style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40">Send</motion.button>
       </div>
     </div>
   );
 }
 
-function FAQItem({q,a}:{q:string;a:string}){
-  const [open,setOpen]=useState(false);
-  return(
-    <div className="py-6">
-      <button onClick={()=>setOpen(!open)} className="flex w-full items-start justify-between gap-4 text-left">
-        <span className="font-['Instrument_Serif'] italic text-lg text-white/75">{q}</span>
-        <motion.span animate={{rotate:open?45:0}} className="mt-1 flex-shrink-0 font-mono text-xl text-violet-400">+</motion.span>
-      </button>
+// ─── FAQ ITEM ─────────────────────────────────────────────────────────────────
+function FAQItem({ q, a }: { q:string; a:string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.div className="py-5" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }} initial={false}>
+      <motion.button onClick={()=>setOpen(!open)} className="flex w-full items-center justify-between gap-4 text-left"
+        whileHover={{ x:2 }}>
+        <span style={{ ...IF, fontStyle:"italic" }} className="text-lg text-gray-800">{q}</span>
+        <motion.span animate={{ rotate:open?45:0, color:open?"#7c3aed":"#9ca3af" }} transition={{ duration:0.2 }}
+          className="flex-shrink-0 text-2xl font-light">+</motion.span>
+      </motion.button>
       <AnimatePresence>
-        {open&&(
-          <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.35}} className="overflow-hidden">
-            <p className="mt-4 font-mono text-sm leading-relaxed text-white/35">{a}</p>
+        {open && (
+          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }} transition={{ duration:0.35, ease:E }} className="overflow-hidden">
+            <p style={SF} className="mt-4 text-sm leading-relaxed text-gray-500">{a}</p>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
+  );
+}
+
+// ─── BLUR BUTTON ─────────────────────────────────────────────────────────────
+function BlurBtn({ children, onClick, dark }: { children:React.ReactNode; onClick?:()=>void; dark?:boolean }) {
+  return (
+    <motion.button onClick={onClick}
+      whileHover={{ scale:1.05, y:-3, boxShadow: dark ? "0 12px 40px rgba(0,0,0,0.3)" : "0 12px 40px rgba(124,58,237,0.12)" }}
+      whileTap={{ scale:0.97 }}
+      style={ dark
+        ? { ...SF, background:"linear-gradient(135deg,#111,#2d2d2d)", boxShadow:"0 4px 20px rgba(0,0,0,0.22)" }
+        : { ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 4px 20px rgba(0,0,0,0.07)" }
+      }
+      className={`px-8 py-4 rounded-full text-sm font-semibold transition-all ${dark ? "text-white" : "text-gray-700"}`}>
+      {children}
+    </motion.button>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HOME
 // ═══════════════════════════════════════════════════════════════════════════════
-function HomePage({goto}:{goto:(p:Page)=>void}){
-  const heroRef=useRef<HTMLElement>(null);
-  const {scrollYProgress}=useScroll({target:heroRef,offset:["start start","end start"]});
-  const heroY=useTransform(scrollYProgress,[0,1],["0%","18%"]);
-  const heroO=useTransform(scrollYProgress,[0,0.75],[1,0]);
-  return(
+function HomePage({ goto }: { goto:(p:Page)=>void }) {
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target:heroRef, offset:["start start","end start"] });
+  const heroY = useTransform(scrollYProgress, [0,1], ["0%","18%"]);
+  const heroO = useTransform(scrollYProgress, [0,0.8], [1,0]);
+
+  return (
     <>
-      <section ref={heroRef} className="relative z-10 flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-24 pb-16 text-center">
-        <motion.div style={{y:heroY,opacity:heroO}} className="relative w-full max-w-5xl">
-          <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.8,ease:E,delay:0.1}}><Tag>AI Automation Studio</Tag></motion.div>
-          <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] tracking-tight text-white" style={{fontSize:"clamp(64px,10.5vw,145px)"}}>
-            <WordReveal text="quazieR, quicker and easier" italic="quicker" delay={0.2}/>
-          </h1>
-          <motion.p initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.65}} className="mb-6 font-['Instrument_Serif'] italic font-light text-white/45" style={{fontSize:"clamp(22px,3vw,36px)"}}>Work smarter. Not harder.</motion.p>
-          <motion.p initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.82}} className="mx-auto mb-10 max-w-2xl font-mono text-sm leading-relaxed text-white/38 md:text-base">
-            At <span className="text-violet-300">quazieR</span>, we build AI automation systems that answer calls, respond to messages, and follow up with leads automatically — so your business never misses an opportunity.
+      {/* HERO */}
+      <section ref={heroRef} className="relative pt-44 pb-28 px-6 overflow-hidden">
+        <motion.div style={{ y:heroY, opacity:heroO }} className="mx-auto max-w-5xl text-center">
+          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, ease:E }}>
+            <motion.span
+              style={{ ...SF, color:"#7c3aed", background:"rgba(124,58,237,0.08)", border:"1px solid rgba(124,58,237,0.15)", backdropFilter:"blur(8px)" }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-8"
+              whileHover={{ scale:1.04 }}>
+              ✦ AI Automation Studio
+            </motion.span>
+          </motion.div>
+
+          <motion.h1 initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.9, ease:E, delay:0.1 }}
+            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,8vw,112px)" }}
+            className="text-gray-900 leading-[0.88] tracking-tight mb-6">
+            quazieR,{" "}
+            <motion.span
+              style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundSize:"200% 200%" }}
+              animate={{ backgroundPosition:["0% 50%","100% 50%","0% 50%"] }}
+              transition={{ duration:5, repeat:Infinity, ease:"easeInOut" }}>
+              quicker
+            </motion.span>
+            {" "}and easier
+          </motion.h1>
+
+          <motion.p initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.25 }}
+            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(18px,2.2vw,28px)" }}
+            className="text-gray-400 mb-4">Work smarter. Not harder.</motion.p>
+
+          <motion.p initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.35 }}
+            style={SF} className="text-base text-gray-500 leading-relaxed max-w-2xl mx-auto mb-10">
+            At <span style={{ color:"#7c3aed" }}>quazieR</span>, we build AI automation systems that answer calls, respond to messages, and follow up with leads automatically — so your business never misses an opportunity.
           </motion.p>
-          <motion.div initial={{opacity:0,y:25}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:1.0}} className="flex flex-wrap items-center justify-center gap-4">
-            <button onClick={()=>goto("pricing")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.5)] transition hover:bg-violet-500 hover:shadow-[0_0_44px_rgba(124,58,237,0.65)]">See pricing</button>
-            <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.12] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/55 transition hover:border-violet-400/35 hover:bg-violet-500/[0.08] hover:text-white">Contact us</button>
-            <button onClick={()=>document.getElementById("demo-section")?.scrollIntoView({behavior:"smooth"})}
-              className="inline-flex items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/[0.08] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/[0.15] hover:text-white">
-              💬 Try our AI
-            </button>
+
+          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.45 }}
+            className="flex flex-wrap items-center justify-center gap-4">
+            <BlurBtn dark onClick={()=>goto("pricing")}>See pricing</BlurBtn>
+            <BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Contact us</BlurBtn>
+            <motion.button onClick={()=>document.getElementById("demo-section")?.scrollIntoView({ behavior:"smooth" })}
+              whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
+              style={{ ...SF, background:"rgba(124,58,237,0.07)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.2)", color:"#7c3aed" }}
+              className="px-8 py-4 rounded-full text-sm font-semibold">
+              Try our AI
+            </motion.button>
           </motion.div>
-          <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} transition={{duration:1.2,ease:E,delay:1.2}} className="mt-16 flex justify-center">
-            <IllustrationOrbitNetwork/>
-          </motion.div>
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:2.5}} className="mt-8 flex flex-col items-center gap-2 opacity-20">
-            <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-white">Scroll</span>
-            <motion.div className="h-10 w-px origin-top bg-white" animate={{scaleY:[0,1,0],opacity:[0,1,0]}} transition={{duration:2,repeat:Infinity,ease:"easeInOut"}}/>
-          </motion.div>
+        </motion.div>
+
+        {/* Stats card */}
+        <motion.div initial={{ opacity:0, y:50, scale:0.96 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:1.1, ease:E, delay:0.6 }}
+          className="mx-auto mt-20 max-w-4xl rounded-3xl overflow-hidden"
+          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 30px 80px rgba(124,58,237,0.1), 0 2px 0 rgba(255,255,255,0.8) inset" }}>
+          <div className="p-8 md:p-14">
+            <div className="grid gap-8 md:grid-cols-3">
+              {STATS.map((s,i)=>(
+                <motion.div key={i} initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.9+i*0.12, ease:E }}
+                  whileHover={{ scale:1.04 }} className="text-center cursor-default">
+                  <p style={{ ...IF, fontStyle:"italic", fontSize:"clamp(38px,5vw,64px)", background:"linear-gradient(135deg,#7c3aed,#a855f7)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>{s.n}</p>
+                  <p style={SF} className="text-sm text-gray-500 leading-snug mt-2">{s.l}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </section>
 
-      <div className="relative z-10 overflow-hidden border-y border-violet-500/[0.12] py-4">
-        <div className="flex gap-10" style={{width:"max-content",animation:"ticker 30s linear infinite"}}>
+      {/* TICKER */}
+      <div className="overflow-hidden border-y py-4" style={{ borderColor:"rgba(124,58,237,0.08)", background:"rgba(255,255,255,0.3)", backdropFilter:"blur(8px)" }}>
+        <div className="flex gap-10" style={{ width:"max-content", animation:"ticker 32s linear infinite" }}>
           {[...TICKER,...TICKER].map((t,i)=>(
-            <span key={i} className="flex shrink-0 items-center gap-3 font-mono text-[9px] uppercase tracking-[0.22em] text-white/22">{t}<span className="text-violet-600 text-[7px]">◆</span></span>
+            <span key={i} style={SF} className="flex shrink-0 items-center gap-3 text-xs uppercase tracking-widest text-gray-400">
+              {t}<span style={{ color:"rgba(124,58,237,0.5)", fontSize:"0.4rem" }}>◆</span>
+            </span>
           ))}
         </div>
         <style>{`@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
       </div>
 
-      <section className="relative z-10 border-b border-white/[0.05]">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-white/[0.05] md:grid-cols-3 md:divide-x md:divide-y-0">
-          {STATS.map((s,i)=>(
-            <motion.div key={i} initial={{opacity:0,y:35}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.9,ease:E,delay:i*0.12}} className="flex flex-col gap-2 px-8 py-12 md:px-12">
-              <span className="font-['Instrument_Serif'] italic text-violet-300 leading-none" style={{fontSize:"clamp(52px,6vw,88px)"}}>{s.n}</span>
-              <p className="max-w-[210px] font-mono text-xs leading-relaxed text-white/30">{s.l}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Problem */}
-      <section className="relative z-10 py-36 px-6">
+      {/* PROBLEM */}
+      <section className="py-36 px-6">
         <div className="mx-auto grid max-w-6xl gap-16 md:grid-cols-[1fr_1.9fr] md:gap-28">
-          <motion.div initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="md:sticky md:top-28 md:self-start">
-            <Tag>The problem</Tag>
-            <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(38px,5vw,68px)"}}>Good businesses<br />lose <em className="text-violet-300">quietly.</em></h2>
-            <div className="mt-10"><IllustrationDotGrid/><p className="mt-3 font-mono text-[9px] uppercase tracking-[0.18em] text-white/20">Each dot — a missed lead</p></div>
+          <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
+            className="md:sticky md:top-32 md:self-start">
+            <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The problem</p>
+            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,4.5vw,64px)" }} className="text-gray-900 leading-[0.93]">
+              Good businesses<br/>lose <em style={{ color:"#7c3aed" }}>quietly.</em>
+            </h2>
+            {/* Animated dot grid */}
+            <div className="mt-10 grid gap-1.5" style={{ gridTemplateColumns:"repeat(8,1fr)", width:"fit-content" }}>
+              {Array.from({ length: 40 }, (_, i) => (
+                <motion.div key={i} className="h-2 w-2 rounded-full"
+                  style={{ background:"rgba(124,58,237,0.25)" }}
+                  animate={{ opacity:[0.15,1,0.15], scale:[0.6,1.2,0.6] }}
+                  transition={{ duration:2.5, repeat:Infinity, delay:i*0.08, ease:"easeInOut" }}/>
+              ))}
+            </div>
+            <p style={SF} className="mt-3 text-xs uppercase tracking-widest text-gray-300">Each dot — a missed lead</p>
           </motion.div>
-          <div className="divide-y divide-white/[0.05]">
+          <div style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
             {[
               "Most businesses don't lose customers because they're bad at what they do.",
-              <><strong className="font-semibold text-white">They lose them because responses arrive too late.</strong> Calls come in while you're busy. Messages wait while your attention is elsewhere. Leads disappear quietly — not because you don't care, but because you're human and time is limited.</>,
+              <><strong className="font-semibold text-gray-900">They lose them because responses arrive too late.</strong> Calls come in while you're busy. Messages wait while your attention is elsewhere. Leads disappear quietly — not because you don't care, but because you're human and time is limited.</>,
               "In today's market, speed matters. Consistency matters. Availability matters.",
-              <>The average lead expects a reply <strong className="text-white">within 5 minutes.</strong> Most businesses respond in 5 hours — or never. That gap is where revenue quietly disappears.</>,
-              <>Our AI systems close that gap permanently. <strong className="text-white">Every call answered. Every message replied to. Every lead followed up.</strong> Without you lifting a finger.</>,
+              <>The average lead expects a reply <strong className="text-gray-900">within 5 minutes.</strong> Most businesses respond in 5 hours — or never. That gap is where revenue quietly disappears.</>,
+              <>Our AI systems close that gap permanently. <strong className="text-gray-900">Every call answered. Every message replied to. Every lead followed up.</strong> Without you lifting a finger.</>,
             ].map((t,i)=>(
-              <motion.p key={i} initial={{opacity:0,y:25}} whileInView={{opacity:1,y:0}} viewport={{once:true,margin:"-40px"}} transition={{duration:0.85,ease:E,delay:i*0.08}} className="py-7 font-mono text-sm leading-[1.95] text-white/38">{t}</motion.p>
+              <motion.p key={i} initial={{ opacity:0, x:30 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true, margin:"-40px" }}
+                transition={{ duration:0.7, ease:E, delay:i*0.08 }}
+                style={{ ...SF, borderBottom:"1px solid rgba(0,0,0,0.05)" }}
+                className="py-7 text-sm leading-[1.95] text-gray-500">{t}</motion.p>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Demo */}
-      <section id="demo-section" className="relative z-10 py-36 px-6">
+      {/* HOW IT WORKS */}
+      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
         <div className="mx-auto max-w-6xl">
-          <motion.div initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mb-16 text-center">
-            <Tag>Live demo</Tag>
-            <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(40px,5.5vw,80px)"}}>Try our AI <em className="text-violet-300">systems</em></h2>
+          <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="text-center mb-16">
+            <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">How it works</p>
+            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(32px,4vw,56px)" }} className="text-gray-900 leading-tight">Every lead.<br/><em style={{ color:"#7c3aed" }}>Handled.</em></h2>
+            <p style={SF} className="mt-4 text-gray-500 max-w-lg mx-auto">A lead comes in. The AI picks it up instantly, qualifies it, logs it to your CRM, and follows up automatically — all without you touching a thing.</p>
           </motion.div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <motion.div initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.95,ease:E}}
-              className="overflow-hidden rounded-2xl border border-violet-500/[0.15] bg-white/[0.03] backdrop-blur-sm" style={{minHeight:500}}>
-              <div className="border-b border-white/[0.07] px-6 py-5">
-                <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-violet-400">AI Chat</p>
-                <h3 className="font-['Instrument_Serif'] italic text-2xl text-white">Chat with our AI</h3>
-                <p className="mt-1 font-mono text-xs text-white/30">See how our AI responds instantly to leads</p>
-              </div>
-              <div style={{height:400}}><ChatDemo/></div>
-            </motion.div>
-            <motion.div initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.95,ease:E,delay:0.12}}
-              className="flex flex-col items-center justify-center rounded-2xl border border-violet-500/[0.15] bg-white/[0.03] p-12 backdrop-blur-sm text-center" style={{minHeight:500}}>
-              <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.22em] text-violet-400">AI Voice</p>
-              <h3 className="mb-4 font-['Instrument_Serif'] italic leading-[1] text-white" style={{fontSize:"clamp(26px,3.5vw,36px)"}}>Call our AI receptionist</h3>
-              <p className="mb-8 max-w-xs font-mono text-xs leading-relaxed text-white/30">Experience a real AI answering calls 24/7. Pick up the phone — it's live right now.</p>
-              <div className="mb-4"><IllustrationSignalRings/></div>
-              <div className="mb-6"><IllustrationVoiceWave/></div>
-              <a href="tel:+15186623244" className="mb-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.45)] transition hover:bg-violet-500">📞 Call now</a>
-              <p className="font-mono text-[10px] text-white/18">Test our AI voice agent live</p>
-            </motion.div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {STEPS.map((s,i)=>(
+              <motion.div key={i} initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.15, ease:E }}
+                whileHover={{ y:-8, boxShadow:"0 24px 60px rgba(124,58,237,0.1)" }}
+                className="rounded-2xl p-8 cursor-default"
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                <span style={{ ...IF, fontStyle:"italic", fontSize:"3.5rem", color:"rgba(124,58,237,0.18)" }} className="block mb-4 leading-none">{s.n}</span>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-3">{s.title}</h3>
+                <p style={SF} className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
           </div>
+          <motion.div initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay:0.4 }} className="mt-12 flex justify-center gap-4 flex-wrap">
+            <BlurBtn dark onClick={()=>{ trackLead(); goto("contact"); }}>Start the conversation</BlurBtn>
+            <BlurBtn onClick={()=>goto("pricing")}>See pricing</BlurBtn>
+          </motion.div>
         </div>
       </section>
 
-      {/* Services preview */}
-      <section className="relative z-10 py-36 px-6">
+      {/* SERVICES */}
+      <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}}>
-              <Tag>What we build</Tag>
-              <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(40px,5.5vw,78px)"}}>AI that works<br /><em className="text-violet-300">while you don't.</em></h2>
+            <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}>
+              <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">What we build</p>
+              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5vw,70px)" }} className="text-gray-900 leading-[0.93]">AI that works<br/><em style={{ color:"#7c3aed" }}>while you don't.</em></h2>
             </motion.div>
-            <button onClick={()=>goto("services")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 transition hover:border-violet-400/25 hover:text-white">All services</button>
+            <motion.button onClick={()=>goto("services")} whileHover={{ scale:1.04 }}
+              style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors self-start">
+              All services →
+            </motion.button>
           </div>
-          <div className="grid gap-px border border-violet-500/[0.1]" style={{gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))"}}>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((s,i)=>(
-              <motion.div key={i} initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.85,ease:E,delay:i*0.08}}
-                className="group flex flex-col gap-4 bg-[#06060c] p-8 transition-colors hover:bg-violet-950/20">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-500/[0.15] bg-violet-600/[0.08] font-mono text-[10px] uppercase tracking-[0.15em] text-violet-400/60 transition group-hover:border-violet-500/30 group-hover:bg-violet-600/15 group-hover:text-violet-300">{s.glyph}</span>
-                <h3 className="font-['Instrument_Serif'] italic text-[19px] text-white">{s.title}</h3>
-                <p className="font-mono text-xs leading-relaxed text-white/30">{s.desc}</p>
+              <motion.div key={i} initial={{ opacity:0, y:40, scale:0.96 }} whileInView={{ opacity:1, y:0, scale:1 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
+                whileHover={{ y:-7, boxShadow:"0 20px 60px rgba(124,58,237,0.1)" }}
+                className="group rounded-2xl p-8 cursor-default"
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                <p style={{ ...IF, fontStyle:"italic", fontSize:"2.2rem", color:"rgba(124,58,237,0.2)" }} className="mb-4 leading-none">{s.n}</p>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{s.title}</h3>
+                <p style={SF} className="text-sm text-gray-500 leading-relaxed mb-4">{s.desc}</p>
+                <motion.span whileHover={{ scale:1.06 }}
+                  style={{ ...SF, background:"rgba(124,58,237,0.08)", color:"#7c3aed", backdropFilter:"blur(6px)", border:"1px solid rgba(124,58,237,0.12)" }}
+                  className="inline-block text-xs font-semibold px-3 py-1 rounded-full cursor-default">{s.price}</motion.span>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="relative z-10 py-24 px-6">
+      {/* DEMO */}
+      <section id="demo-section" className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
         <div className="mx-auto max-w-6xl">
-          <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}}
-            className="rounded-2xl border border-violet-500/[0.15] bg-violet-950/[0.15] p-10 md:p-16">
-            <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:items-center">
-              <div>
-                <Tag>How it works</Tag>
-                <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(32px,4vw,56px)"}}>Every lead.<br /><em className="text-violet-300">Handled.</em></h2>
-                <p className="mt-6 font-mono text-sm leading-[1.9] text-white/35">A lead comes in. The AI picks it up instantly, qualifies it, logs it to your CRM, and follows up automatically — all without you touching a thing.</p>
-              </div>
-              <div className="flex flex-col items-center gap-8">
-                <IllustrationDataFlow/>
-                <IllustrationWorkflow/>
-              </div>
-            </div>
+          <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="text-center mb-16">
+            <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Live demo</p>
+            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(32px,4vw,60px)" }} className="text-gray-900 leading-tight">Try our AI <em style={{ color:"#7c3aed" }}>systems</em></h2>
           </motion.div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:0.8, ease:E }}
+              className="rounded-3xl overflow-hidden"
+              style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,0.9)", minHeight:520, boxShadow:"0 8px 40px rgba(0,0,0,0.06)" }}>
+              <div className="px-7 py-6" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }}>
+                <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest">AI Chat</p>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mt-1">Chat with our AI</h3>
+                <p style={SF} className="text-sm text-gray-500 mt-1">See how our AI responds instantly to leads</p>
+              </div>
+              <div style={{ height:420 }}><ChatDemo/></div>
+            </motion.div>
+            <motion.div initial={{ opacity:0, x:40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:0.8, ease:E }}
+              className="rounded-3xl p-10 flex flex-col items-center justify-center text-center"
+              style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,0.9)", minHeight:520, boxShadow:"0 8px 40px rgba(0,0,0,0.06)" }}>
+              <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">AI Voice</p>
+              <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(22px,3vw,34px)" }} className="text-gray-900 mb-3">Call our AI receptionist</h3>
+              <p style={SF} className="text-sm text-gray-500 max-w-xs leading-relaxed mb-10">Experience a real AI answering calls 24/7. Pick up the phone — it's live right now.</p>
+              {/* Animated rings */}
+              <div className="relative flex items-center justify-center mb-10">
+                {[70,100,130,160].map((s,i)=>(
+                  <motion.div key={s} className="absolute rounded-full" style={{ width:s, height:s, border:"1px solid rgba(124,58,237,0.18)" }}
+                    animate={{ scale:[1,1.12,1], opacity:[0.5,0.1,0.5] }} transition={{ duration:2.8, repeat:Infinity, delay:i*0.55, ease:"easeInOut" }}/>
+                ))}
+                <motion.div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.4)" }}
+                  animate={{ boxShadow:["0 8px 28px rgba(124,58,237,0.4)","0 12px 40px rgba(124,58,237,0.6)","0 8px 28px rgba(124,58,237,0.4)"] }}
+                  transition={{ duration:2, repeat:Infinity }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" fill="white"/></svg>
+                </motion.div>
+              </div>
+              <motion.a href="tel:+15186623244" onClick={()=>trackLead()}
+                whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
+                style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.3)" }}
+                className="px-10 py-4 rounded-full text-sm font-semibold text-white mb-3 block text-center">Call now</motion.a>
+              <p style={SF} className="text-xs text-gray-400">Test our AI voice agent live</p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Comparison */}
-      <section className="relative z-10 py-36 px-6">
+      {/* COMPARISON */}
+      <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
-          <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mb-14">
-            <Tag>Why quazieR</Tag>
-            <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(40px,5.5vw,78px)"}}>vs. doing it<br /><em className="text-violet-300">manually.</em></h2>
+          <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }} className="mb-14">
+            <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Why quazieR</p>
+            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5vw,72px)" }} className="text-gray-900 leading-[0.93]">vs. doing it<br/><em style={{ color:"#7c3aed" }}>manually.</em></h2>
           </motion.div>
-          <motion.div initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.9,ease:E,delay:0.15}} className="overflow-hidden rounded-2xl border border-violet-500/[0.1]">
-            <div className="grid grid-cols-[1.6fr_1fr_1fr] border-b border-violet-500/[0.1] bg-violet-950/[0.08]">
+          <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.9, ease:E }}
+            className="overflow-hidden rounded-2xl"
+            style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.85)", boxShadow:"0 8px 40px rgba(0,0,0,0.05)" }}>
+            <div className="grid grid-cols-[1.6fr_1fr_1fr]" style={{ borderBottom:"1px solid rgba(0,0,0,0.07)", background:"rgba(124,58,237,0.03)" }}>
               {["Feature","quazieR AI","Without AI"].map((h,i)=>(
-                <div key={h} className={`px-6 py-4 font-mono text-[9px] uppercase tracking-[0.22em] ${i===0?"text-white/18":i===1?"border-l border-violet-500/[0.1] text-violet-300":"border-l border-violet-500/[0.1] text-white/18"}`}>{h}</div>
+                <div key={h} style={{ ...SF, borderLeft:i>0?"1px solid rgba(0,0,0,0.05)":undefined }} className={`px-6 py-4 text-xs font-semibold uppercase tracking-widest ${i===1?"text-purple-600":"text-gray-400"}`}>{h}</div>
               ))}
             </div>
             {COMPARE.map(([feat,ours,theirs],i)=>(
-              <motion.div key={i} initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{delay:0.05*i}}
-                className="grid grid-cols-[1.6fr_1fr_1fr] border-b border-white/[0.04] transition-colors last:border-0 hover:bg-violet-950/[0.1]">
-                <div className="flex items-center px-6 py-4 font-mono text-xs text-white/40">{feat}</div>
-                <div className="flex items-center gap-2 border-l border-white/[0.04] px-6 py-4 font-mono text-xs font-medium text-violet-300"><span className="text-[8px] text-violet-500">◆</span>{ours}</div>
-                <div className="flex items-center border-l border-white/[0.04] px-6 py-4 font-mono text-xs text-white/18">{theirs}</div>
+              <motion.div key={i} initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} transition={{ delay:0.05*i }}
+                whileHover={{ background:"rgba(124,58,237,0.03)" }}
+                className="grid grid-cols-[1.6fr_1fr_1fr]" style={{ borderBottom:"1px solid rgba(0,0,0,0.04)" }}>
+                <div style={SF} className="flex items-center px-6 py-4 text-sm text-gray-500">{feat}</div>
+                <div style={{ ...SF, borderLeft:"1px solid rgba(0,0,0,0.04)" }} className="flex items-center gap-2 px-6 py-4 text-sm font-medium text-purple-700">
+                  <span className="text-purple-400 text-xs">◆</span>{ours}
+                </div>
+                <div style={{ ...SF, borderLeft:"1px solid rgba(0,0,0,0.04)" }} className="flex items-center px-6 py-4 text-sm text-gray-400">{theirs}</div>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* Pricing preview */}
-      <section className="relative z-10 py-36 px-6">
+      {/* PRICING PREVIEW */}
+      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}}>
-              <Tag>Pricing</Tag>
-              <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(40px,5.5vw,78px)"}}>Simple pricing.<br /><em className="text-violet-300">Real automation.</em></h2>
+            <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}>
+              <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Pricing</p>
+              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5vw,72px)" }} className="text-gray-900 leading-[0.93]">Simple pricing.<br/><em style={{ color:"#7c3aed" }}>Real automation.</em></h2>
             </motion.div>
-            <motion.p initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{delay:0.2}} className="max-w-[240px] font-mono text-xs text-white/25 md:text-right">No hidden fees.<br/>No long-term contracts.<br/>Cancel anytime.</motion.p>
+            <p style={SF} className="text-sm text-gray-400 md:text-right">No hidden fees.<br/>No long-term contracts.<br/>Cancel anytime.</p>
           </div>
-          <div className="grid gap-px border border-violet-500/[0.1] md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p,i)=>(
-              <motion.div key={i} initial={{opacity:0,y:55}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.9,ease:E,delay:i*0.1}}
-                className={`relative flex flex-col p-8 transition-all ${p.hot?"bg-violet-950/30 hover:bg-violet-950/40":p.custom?"bg-[#08080f] hover:bg-[#0a0a15]":"bg-[#06060c] hover:bg-violet-950/15"}`}>
-                {p.hot&&<span className="absolute right-5 top-5 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-violet-300">Popular</span>}
-                {p.custom&&<span className="absolute right-5 top-5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-white/25">Custom</span>}
-                <span className="mb-5 font-mono text-[10px] tracking-[0.2em] text-violet-600/45">{p.n}</span>
-                <h3 className="mb-2 font-['Instrument_Serif'] italic text-xl text-white">{p.title}</h3>
-                <p className="mb-6 font-mono text-[11px] leading-relaxed text-white/28">{p.desc}</p>
-                {p.custom
-                  ?<p className="mb-6 font-['Instrument_Serif'] italic text-4xl text-white leading-none">Let&apos;s talk</p>
-                  :<><p className="mb-0.5 font-mono text-[9px] uppercase tracking-widest text-white/18">{p.setup} setup —</p>
-                    <p className="mb-6 font-['Instrument_Serif'] italic leading-none text-white" style={{fontSize:"clamp(2rem,3.5vw,3rem)"}}>{p.mo}<span className="font-sans text-sm text-white/22"> / mo</span></p></>
-                }
-                <ul className="mb-8 space-y-2 border-t border-white/[0.05] pt-5">
+              <motion.div key={i} initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
+                whileHover={{ y:-7 }}
+                className={`rounded-2xl p-7 flex flex-col relative cursor-default ${p.hot?"ring-2 ring-purple-400":""}`}
+                style={{ background:p.hot?"rgba(124,58,237,0.05)":"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                {p.hot && <motion.span initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.5, type:"spring" }}
+                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white">Popular</motion.span>}
+                {p.custom && <span style={SF} className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-gray-600 bg-gray-100">Custom</span>}
+                <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">{p.n}</p>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{p.title}</h3>
+                <p style={SF} className="text-sm text-gray-500 mb-5 leading-relaxed">{p.desc}</p>
+                <div className="mb-5">
+                  {p.custom
+                    ? <p style={{ ...IF, fontStyle:"italic" }} className="text-3xl text-gray-900">Let&apos;s talk</p>
+                    : <><p style={SF} className="text-xs text-gray-400">{p.setup} setup</p>
+                        <p style={{ ...IF, fontStyle:"italic" }} className="text-3xl text-gray-900">{p.price}<span style={SF} className="text-base font-normal text-gray-400">/mo</span></p>
+                      </>
+                  }
+                </div>
+                <ul className="mb-6 space-y-2.5 flex-1" style={{ borderTop:"1px solid rgba(0,0,0,0.06)", paddingTop:"1.25rem" }}>
                   {p.features.map(f=>(
-                    <li key={f} className="flex items-start gap-2 font-mono text-[11px] text-white/32"><span className="mt-[3px] shrink-0 text-[7px] text-violet-500">◆</span>{f}</li>
+                    <li key={f} style={SF} className="flex items-start gap-2 text-sm text-gray-600">
+                      <span style={{ color:"#7c3aed" }} className="mt-0.5 shrink-0">✓</span>{f}
+                    </li>
                   ))}
                 </ul>
-                <button onClick={()=>{ trackLead(); goto("contact"); }} className={`mt-auto block rounded-lg py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-400/70 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/40 hover:border-violet-400/25 hover:text-white"}`}>
+                <motion.button onClick={()=>{ trackLead(); goto("contact"); }}
+                  whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                  style={p.hot
+                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }
+                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)" }}
+                  className={`w-full py-3 rounded-xl text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
                   {p.custom?"Get a quote":"Get started"}
-                </button>
+                </motion.button>
               </motion.div>
             ))}
           </div>
-          <motion.div initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{delay:0.3}} className="mt-8 text-center">
-            <button onClick={()=>goto("pricing")} className="font-mono text-xs text-white/22 underline underline-offset-4 transition hover:text-white/50">View full pricing details</button>
-          </motion.div>
+          <div className="mt-8 text-center">
+            <motion.button onClick={()=>goto("pricing")} style={SF} whileHover={{ scale:1.04 }}
+              className="text-sm text-gray-400 underline underline-offset-4 hover:text-gray-700 transition-colors">View full pricing details</motion.button>
+          </div>
         </div>
       </section>
 
-      {/* Founders */}
-      <section className="relative z-10 py-36 px-6">
+      {/* FOUNDERS */}
+      <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-[1fr_1.6fr] md:gap-24">
-            <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="md:sticky md:top-28 md:self-start">
-              <Tag>The founders</Tag>
-              <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(36px,4.5vw,62px)"}}>Built by people<br /><em className="text-violet-300">who care.</em></h2>
+            <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
+              className="md:sticky md:top-32 md:self-start">
+              <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The founders</p>
+              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(32px,4vw,56px)" }} className="text-gray-900 leading-[0.93]">Built by people<br/><em style={{ color:"#7c3aed" }}>who care.</em></h2>
               <div className="mt-8 flex flex-wrap gap-2">
                 {["Michael Brito","Badre Elkhammal"].map(name=>(
-                  <span key={name} className="rounded-full border border-violet-500/[0.18] bg-violet-600/[0.07] px-4 py-1.5 font-mono text-xs text-white/40">{name}</span>
+                  <motion.span key={name} whileHover={{ scale:1.04 }}
+                    style={{ ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)" }}
+                    className="rounded-full px-4 py-1.5 text-sm text-gray-600 cursor-default">{name}</motion.span>
                 ))}
               </div>
             </motion.div>
-            <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E,delay:0.15}}>
-              <blockquote className="mb-8 font-['Instrument_Serif'] italic text-[clamp(18px,2.2vw,26px)] font-light leading-[1.55] text-white/65">&ldquo;Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming.&rdquo;</blockquote>
-              <div className="space-y-5 font-mono text-sm leading-[1.95] text-white/35">
-                <p>quazieR was founded by <span className="text-white/60">Michael Brito</span> and <span className="text-white/60">Badre Elkhammal</span> — two builders who got tired of watching great businesses lose opportunities simply because nobody picked up the phone.</p>
-                <p>After seeing countless teams burn out trying to manually respond to every lead, they built systems that quietly handle communication so owners can focus on real work.</p>
-                <p>No hype. No shortcuts. Just well-designed systems that do exactly what they&apos;re supposed to do.</p>
+            <motion.div initial={{ opacity:0, x:40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E, delay:0.1 }}>
+              <blockquote style={{ ...IF, fontStyle:"italic", fontSize:"clamp(18px,2.2vw,26px)" }} className="font-light leading-[1.55] text-gray-500 mb-8">
+                &ldquo;Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming.&rdquo;
+              </blockquote>
+              <div className="space-y-5">
+                <p style={SF} className="text-sm leading-[1.95] text-gray-500">quazieR was founded by <span className="text-gray-700">Michael Brito</span> and <span className="text-gray-700">Badre Elkhammal</span> — two builders who got tired of watching great businesses lose opportunities simply because nobody picked up the phone.</p>
+                <p style={SF} className="text-sm leading-[1.95] text-gray-500">After seeing countless teams burn out trying to manually respond to every lead, they built systems that quietly handle communication so owners can focus on real work.</p>
+                <p style={SF} className="text-sm leading-[1.95] text-gray-500">No hype. No shortcuts. Just well-designed systems that do exactly what they&apos;re supposed to do.</p>
               </div>
             </motion.div>
           </div>
@@ -695,23 +735,29 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 px-6 pb-36 pt-10">
+      <section className="px-6 pb-36 pt-10">
         <div className="mx-auto max-w-6xl">
-          <div aria-hidden className="mb-20 h-px w-full" style={{background:"linear-gradient(to right,transparent,rgba(139,92,246,0.5),transparent)"}}/>
+          <motion.div initial={{ opacity:0, scaleX:0 }} whileInView={{ opacity:1, scaleX:1 }} viewport={{ once:true }} transition={{ duration:1 }}
+            className="mb-20 h-px w-full" style={{ background:"linear-gradient(to right,transparent,rgba(124,58,237,0.4),transparent)" }}/>
           <div className="grid gap-14 md:grid-cols-2 md:gap-24">
-            <motion.h2 initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1.1,ease:E}}
-              className="font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(52px,7.5vw,110px)"}}>
-              A calmer<br />way to<br /><em className="text-violet-300">grow.</em>
+            <motion.h2 initial={{ opacity:0, y:50 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1.1, ease:E }}
+              style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,7.5vw,110px)" }}
+              className="text-gray-900 leading-[0.88]">
+              A calmer<br/>way to<br/><em style={{ color:"#7c3aed" }}>grow.</em>
             </motion.h2>
-            <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E,delay:0.15}} className="flex flex-col justify-center">
-              <p className="mb-8 font-mono text-sm leading-[1.9] text-white/38">No pressure. No obligation. Just a clear conversation about your business, your workflow, and whether quazieR is the right system for you.<br/><br/><span className="text-white">Most clients are live within 48 hours.</span> We handle everything — you just show up.</p>
+            <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E, delay:0.15 }} className="flex flex-col justify-center">
+              <p style={SF} className="mb-8 text-sm leading-[1.9] text-gray-500">No pressure. No obligation. Just a clear conversation about your business, your workflow, and whether quazieR is the right system for you.<br/><br/><span className="text-gray-900">Most clients are live within 48 hours.</span> We handle everything — you just show up.</p>
               <div className="flex flex-wrap gap-3">
-                <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Start the conversation</button>
-                <button onClick={()=>goto("pricing")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/45 transition hover:border-violet-400/25 hover:bg-violet-500/[0.07] hover:text-white">See pricing</button>
+                <BlurBtn dark onClick={()=>{ trackLead(); goto("contact"); }}>Start the conversation</BlurBtn>
+                <BlurBtn onClick={()=>goto("pricing")}>See pricing</BlurBtn>
               </div>
               <div className="mt-7 flex flex-wrap gap-3">
                 {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                  <span key={t} className="flex items-center gap-1.5 rounded-full border border-violet-500/[0.15] px-3 py-1 font-mono text-[10px] text-white/28"><span className="h-1 w-1 rounded-full bg-violet-500"/>{t}</span>
+                  <motion.span key={t} whileHover={{ scale:1.05 }}
+                    style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)" }}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-500 cursor-default">
+                    <span className="h-1 w-1 rounded-full bg-purple-400"/>{t}
+                  </motion.span>
                 ))}
               </div>
             </motion.div>
@@ -723,93 +769,104 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PRICING
+// PRICING PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
-function PricingPage({goto}:{goto:(p:Page)=>void}){
-  const [annual,setAnnual]=useState(false);
-  return(
-    <div className="relative z-10 px-6 pt-36 pb-24">
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[700px] rounded-full bg-violet-600/[0.08] blur-[140px]"/>
+function PricingPage({ goto }: { goto:(p:Page)=>void }) {
+  const [annual, setAnnual] = useState(false);
+  return (
+    <div className="pt-32 pb-24 px-6">
       <div className="mx-auto max-w-6xl">
-        <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}} className="mb-20 text-center">
-          <Tag>Pricing</Tag>
-          <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(56px,8vw,120px)"}}>Honest pricing.<br /><em className="text-violet-300">Real results.</em></h1>
-          <p className="mx-auto max-w-xl font-mono text-sm leading-relaxed text-white/35">No hidden fees. No long-term contracts. No sales games. Pick the plan that fits and be live within 48 hours.</p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <span className={`font-mono text-xs uppercase tracking-[0.15em] ${!annual?"text-white":"text-white/30"}`}>Monthly</span>
-            <button onClick={()=>setAnnual(!annual)} className={`relative h-7 w-12 rounded-full border transition-colors ${annual?"border-violet-500/40 bg-violet-600/20":"border-white/[0.1] bg-white/[0.05]"}`}>
-              <motion.span animate={{x:annual?20:2}} transition={{type:"spring",stiffness:400,damping:30}} className="absolute top-1 h-5 w-5 rounded-full bg-violet-500"/>
-            </button>
-            <span className={`font-mono text-xs uppercase tracking-[0.15em] ${annual?"text-white":"text-white/30"}`}>Annual <span className="text-violet-400">−20%</span></span>
-          </div>
+        <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8 }} className="text-center mb-16">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Pricing</p>
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(40px,6vw,80px)" }} className="text-gray-900 leading-tight mb-4">
+            Honest pricing.<br/><em style={{ color:"#7c3aed" }}>Real results.</em>
+          </h1>
+          <p style={SF} className="text-gray-500 max-w-xl mx-auto mb-8">No hidden fees. No long-term contracts. No sales games. Pick the plan that fits and be live within 48 hours.</p>
+          <motion.div initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.3 }}
+            className="inline-flex items-center gap-4 px-5 py-3 rounded-full"
+            style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.06)" }}>
+            <span style={SF} className={`text-sm font-medium transition-colors ${!annual?"text-gray-900":"text-gray-400"}`}>Monthly</span>
+            <motion.button onClick={()=>setAnnual(!annual)} className="relative h-7 w-12 rounded-full transition-colors"
+              style={{ background:annual?"linear-gradient(135deg,#7c3aed,#a855f7)":"rgba(0,0,0,0.1)" }}>
+              <motion.span animate={{ x:annual?22:2 }} transition={{ type:"spring", stiffness:500, damping:35 }}
+                className="absolute top-[3px] left-0 h-[22px] w-[22px] rounded-full bg-white shadow-sm"/>
+            </motion.button>
+            <span style={SF} className={`text-sm font-medium transition-colors ${annual?"text-gray-900":"text-gray-400"}`}>Annual <span style={{ color:"#7c3aed" }}>−20%</span></span>
+          </motion.div>
         </motion.div>
-        <div className="grid gap-px border border-violet-500/[0.1] md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((p,i)=>{
-            const moPrice=p.custom?null:parseInt(p.mo.replace("$","").replace(",",""));
-            const displayPrice=moPrice?(annual?`$${Math.round(moPrice*0.8)}`:p.mo):null;
-            return(
-              <motion.div key={i} initial={{opacity:0,y:55}} animate={{opacity:1,y:0}} transition={{duration:0.9,ease:E,delay:i*0.1}}
-                className={`relative flex flex-col p-8 md:p-10 transition-all ${p.hot?"bg-violet-950/30":p.custom?"bg-[#08080f]":"bg-[#06060c]"}`}>
-                {p.hot&&<span className="absolute right-5 top-5 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-violet-300">Most popular</span>}
-                {p.custom&&<span className="absolute right-5 top-5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-white/25">Bespoke</span>}
-                <span className="mb-5 font-mono text-[10px] tracking-[0.22em] text-violet-600/40">{p.n}</span>
-                <h3 className="mb-2 font-['Instrument_Serif'] italic text-2xl text-white">{p.title}</h3>
-                <p className="mb-8 font-mono text-[11px] leading-relaxed text-white/28">{p.desc}</p>
-                {p.custom
-                  ?<div className="mb-8"><p className="font-['Instrument_Serif'] italic text-4xl text-white leading-none">Tailored</p><p className="mt-2 font-mono text-[10px] text-white/25">Quoted per scope</p></div>
-                  :<div className="mb-8">
-                    <p className="font-mono text-[9px] uppercase tracking-widest text-white/18">{p.setup} setup —</p>
-                    <p className="font-['Instrument_Serif'] italic leading-none text-white" style={{fontSize:"clamp(2.5rem,4vw,3.5rem)"}}>{displayPrice}<span className="font-sans text-base text-white/22"> / mo</span></p>
-                    {annual&&<p className="mt-1 font-mono text-[10px] text-emerald-400">Saving ${moPrice!-Math.round(moPrice!*0.8)}/mo</p>}
-                  </div>
-                }
-                <ul className="mb-10 space-y-3 border-t border-white/[0.05] pt-6">
+            const moPrice = p.custom ? null : parseInt(p.price.replace("$","").replace(",",""));
+            const displayPrice = moPrice ? (annual ? `$${Math.round(moPrice*0.8).toLocaleString()}` : p.price) : null;
+            return (
+              <motion.div key={i} initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
+                whileHover={{ y:-7 }}
+                className={`rounded-2xl p-8 flex flex-col relative cursor-default ${p.hot?"ring-2 ring-purple-400":""}`}
+                style={{ background:p.hot?"rgba(124,58,237,0.04)":"rgba(255,255,255,0.65)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.05)", transition:"box-shadow 0.3s" }}>
+                {p.hot && <motion.span initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.5, type:"spring" }}
+                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white">Most popular</motion.span>}
+                {p.custom && <span style={SF} className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-gray-600 bg-gray-100">Bespoke</span>}
+                <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">{p.n}</p>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mb-2">{p.title}</h3>
+                <p style={SF} className="text-sm text-gray-500 mb-6 leading-relaxed">{p.desc}</p>
+                <div className="mb-6">
+                  {p.custom
+                    ? <><p style={{ ...IF, fontStyle:"italic" }} className="text-4xl text-gray-900">Tailored</p><p style={SF} className="text-xs text-gray-400 mt-1">Quoted per scope</p></>
+                    : <><p style={SF} className="text-xs text-gray-400">{p.setup} setup</p>
+                        <p style={{ ...IF, fontStyle:"italic" }} className="text-4xl text-gray-900">{displayPrice}<span style={SF} className="text-base font-normal text-gray-400">/mo</span></p>
+                        {annual && <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} style={SF} className="text-xs font-medium mt-1 text-emerald-600">Saving ${(moPrice!-Math.round(moPrice!*0.8)).toLocaleString()}/mo</motion.p>}
+                      </>
+                  }
+                </div>
+                <ul className="mb-8 space-y-2.5 flex-1" style={{ borderTop:"1px solid rgba(0,0,0,0.06)", paddingTop:"1.25rem" }}>
                   {p.features.map(f=>(
-                    <li key={f} className="flex items-start gap-2.5 font-mono text-[11px] text-white/35"><span className="mt-[3px] shrink-0 text-[7px] text-violet-500">◆</span>{f}</li>
+                    <li key={f} style={SF} className="flex items-start gap-2 text-sm text-gray-600">
+                      <span style={{ color:"#7c3aed" }} className="mt-0.5 shrink-0">✓</span>{f}
+                    </li>
                   ))}
                 </ul>
-                <button onClick={()=>{ trackLead(); goto("contact"); }} className={`mt-auto block rounded-lg py-3 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-300/60 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/38 hover:border-violet-400/25 hover:text-white"}`}>
+                <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                  style={p.hot
+                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }
+                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)" }}
+                  className={`w-full py-3.5 rounded-xl text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
                   {p.custom?"Request a quote":"Get started"}
-                </button>
+                </motion.button>
               </motion.div>
             );
           })}
         </div>
-        <motion.div initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E,delay:0.2}}
-          className="mt-6 overflow-hidden rounded-2xl border border-violet-500/[0.15] bg-violet-950/[0.18] p-10 md:p-14">
+        {/* n8n */}
+        <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
+          className="mt-8 overflow-hidden rounded-2xl p-10 md:p-14"
+          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.12)", boxShadow:"0 8px 40px rgba(124,58,237,0.06)" }}>
           <div className="grid gap-10 md:grid-cols-[1fr_2fr]">
             <div>
-              <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.22em] text-violet-400">Custom plan</p>
-              <h2 className="font-['Instrument_Serif'] italic leading-[0.93] text-white" style={{fontSize:"clamp(32px,4vw,56px)"}}>Built on<br /><em className="text-violet-300">n8n.</em></h2>
-              <div className="mt-8"><IllustrationWorkflow/></div>
+              <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-3">Custom plan</p>
+              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(28px,4vw,52px)" }} className="text-gray-900 leading-[0.93]">Built on<br/><em style={{ color:"#7c3aed" }}>n8n.</em></h2>
             </div>
             <div>
-              <p className="mb-8 font-mono text-sm leading-[1.9] text-white/38">Not every business fits a template. The Custom plan is for companies with complex, multi-system workflows that need to be engineered from scratch — using n8n as the orchestration layer.</p>
+              <p style={SF} className="mb-8 text-sm leading-[1.9] text-gray-500">Not every business fits a template. The Custom plan is for companies with complex, multi-system workflows that need to be engineered from scratch — using n8n as the orchestration layer.</p>
               <div className="grid gap-4 md:grid-cols-2">
                 {N8N_FEATURES.map((f,i)=>(
-                  <div key={i} className="rounded-xl border border-violet-500/[0.1] bg-violet-950/[0.1] p-5">
-                    <p className="mb-1.5 font-mono text-xs text-white">{f.title}</p>
-                    <p className="font-mono text-[11px] leading-relaxed text-white/30">{f.desc}</p>
-                  </div>
+                  <motion.div key={i} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay:i*0.08 }}
+                    whileHover={{ y:-4 }}
+                    className="rounded-xl p-5" style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.88)" }}>
+                    <p style={SF} className="text-sm font-semibold text-gray-900 mb-1">{f.title}</p>
+                    <p style={SF} className="text-xs leading-relaxed text-gray-500">{f.desc}</p>
+                  </motion.div>
                 ))}
               </div>
               <div className="mt-8">
-                <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/25 px-6 py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/10">Discuss your workflow</button>
+                <BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Discuss your workflow</BlurBtn>
               </div>
             </div>
           </div>
         </motion.div>
-        <motion.div initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mt-20">
-          <Tag>FAQ</Tag>
-          <div className="mt-8 divide-y divide-white/[0.05]">
-            {[
-              {q:"How fast can I go live?",               a:"Most clients are fully live within 48 hours of onboarding. The Custom plan may take longer depending on workflow complexity."},
-              {q:"Is there a long-term commitment?",      a:"No. All plans are month-to-month. Cancel at any time with no penalty."},
-              {q:"Can I upgrade or change plans later?",  a:"Yes. You can move between plans at any time. Changes take effect on your next billing cycle."},
-              {q:"What's included in the setup fee?",     a:"The setup fee covers system configuration, AI training on your business, integration testing, and go-live support."},
-              {q:"Does the AI sound like a real person?", a:"Yes. Our voice AI is trained to match your brand's tone and handles natural conversation including interruptions and follow-up questions."},
-            ].map((item,i)=><FAQItem key={i} q={item.q} a={item.a}/>)}
-          </div>
+        <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1 }} className="mt-20">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-8">FAQ</p>
+          {FAQS.map((item,i)=><FAQItem key={i} q={item.q} a={item.a}/>)}
         </motion.div>
       </div>
     </div>
@@ -817,45 +874,45 @@ function PricingPage({goto}:{goto:(p:Page)=>void}){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SERVICES
+// SERVICES PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
-function ServicesPage({goto}:{goto:(p:Page)=>void}){
-  const items=[
-    {n:"01",title:"AI Website",           headline:"Your 24/7 sales machine.",      desc:"We build high-conversion websites that don't just look good — they actively capture and qualify leads around the clock.",details:["Custom design aligned to your brand","Lead capture with instant AI response","Mobile-first, performance-optimised","Connected to your CRM from day one","Built-in analytics and tracking"]},
-    {n:"02",title:"AI Voice Receptionist",headline:"Never miss a call again.",       desc:"An AI receptionist that answers every call, qualifies the lead, books appointments, and routes urgent matters — sounding exactly like your brand.",details:["Natural conversation handling","Lead qualification scripting","Appointment booking integration","Urgent call escalation routing","Full call logging and summaries"]},
-    {n:"03",title:"AI Chat & SMS",        headline:"Instant replies, every channel.",desc:"We deploy AI on WhatsApp, SMS, and your website chat. Every inbound message gets an immediate, intelligent response — even at 3am.",details:["WhatsApp Business API integration","SMS automation","Web chat widget","Lead capture and qualification","Handoff to human when needed"]},
-    {n:"04",title:"Automated Follow-Ups", headline:"Persistence without effort.",    desc:"Multi-step follow-up sequences that run automatically after every lead interaction.",details:["Multi-channel sequences (email, SMS, WhatsApp)","Personalised message logic","Time-delay and behaviour triggers","Lead scoring integration","Full sequence analytics"]},
-    {n:"05",title:"Lead Qualification",   headline:"Only talk to the right people.", desc:"AI-powered screening that identifies intent, asks qualifying questions, and scores leads before they ever reach your team.",details:["Custom qualification criteria","AI scoring and tagging","Automatic CRM enrichment","Disqualification handling","Hot lead alerts"]},
-    {n:"06",title:"CRM Integration",      headline:"Your stack, connected.",         desc:"We wire your automation systems into your existing CRM so nothing falls through the cracks.",details:["GoHighLevel integration","HubSpot integration","Salesforce integration","Custom API connections","Bi-directional data sync"]},
-    {n:"07",title:"Custom n8n Workflows", headline:"Automation without limits.",     desc:"For businesses with complex, multi-system needs. We architect bespoke automation workflows using n8n — connecting any tool, any API, any process.",details:["Full workflow architecture","API and webhook integration","Conditional logic and branching","Data transformation pipelines","Monitoring and alerting"]},
+function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
+  const items = [
+    { n:"01", title:"AI Website",           headline:"Your 24/7 sales machine.",       desc:"We build high-conversion websites that don't just look good — they actively capture and qualify leads around the clock.", details:["Custom design aligned to your brand","Lead capture with instant AI response","Mobile-first, performance-optimised","Connected to your CRM from day one","Built-in analytics and tracking"] },
+    { n:"02", title:"AI Voice Receptionist",headline:"Never miss a call again.",        desc:"An AI receptionist that answers every call, qualifies the lead, books appointments, and routes urgent matters — sounding exactly like your brand.", details:["Natural conversation handling","Lead qualification scripting","Appointment booking integration","Urgent call escalation routing","Full call logging and summaries"] },
+    { n:"03", title:"AI Chat & SMS",        headline:"Instant replies, every channel.", desc:"We deploy AI on WhatsApp, SMS, and your website chat. Every inbound message gets an immediate, intelligent response — even at 3am.", details:["WhatsApp Business API integration","SMS automation","Web chat widget","Lead capture and qualification","Handoff to human when needed"] },
+    { n:"04", title:"Automated Follow-Ups", headline:"Persistence without effort.",     desc:"Multi-step follow-up sequences that run automatically after every lead interaction.", details:["Multi-channel sequences (email, SMS, WhatsApp)","Personalised message logic","Time-delay and behaviour triggers","Lead scoring integration","Full sequence analytics"] },
+    { n:"05", title:"Lead Qualification",   headline:"Only talk to the right people.",  desc:"AI-powered screening that identifies intent, asks qualifying questions, and scores leads before they ever reach your team.", details:["Custom qualification criteria","AI scoring and tagging","Automatic CRM enrichment","Disqualification handling","Hot lead alerts"] },
+    { n:"06", title:"CRM Integration",      headline:"Your stack, connected.",          desc:"We wire your automation systems into your existing CRM so nothing falls through the cracks.", details:["GoHighLevel integration","HubSpot integration","Salesforce integration","Custom API connections","Bi-directional data sync"] },
+    { n:"07", title:"Custom n8n Workflows", headline:"Automation without limits.",      desc:"For businesses with complex, multi-system needs. We architect bespoke automation workflows using n8n — connecting any tool, any API, any process.", details:["Full workflow architecture","API and webhook integration","Conditional logic and branching","Data transformation pipelines","Monitoring and alerting"] },
   ];
-  return(
-    <div className="relative z-10 px-6 pt-36 pb-24">
+  return (
+    <div className="pt-32 pb-24 px-6">
       <div className="mx-auto max-w-6xl">
-        <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}} className="mb-24">
-          <Tag>Services</Tag>
-          <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(56px,8vw,120px)"}}>Systems that<br /><em className="text-violet-300">do the work.</em></h1>
-          <p className="max-w-xl font-mono text-sm leading-relaxed text-white/35">Each service is a purpose-built system, not a generic tool. We configure, deploy, and maintain everything — you get results without the overhead.</p>
+        <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8 }} className="mb-24">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Services</p>
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(44px,7vw,100px)" }} className="text-gray-900 leading-[0.88] mb-4">Systems that<br/><em style={{ color:"#7c3aed" }}>do the work.</em></h1>
+          <p style={SF} className="text-gray-500 max-w-xl">Each service is a purpose-built system, not a generic tool. We configure, deploy, and maintain everything — you get results without the overhead.</p>
         </motion.div>
-        <div className="divide-y divide-white/[0.05]">
+        <div style={{ borderTop:"1px solid rgba(0,0,0,0.07)" }}>
           {items.map((s,i)=>(
-            <motion.div key={i} initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.85,ease:E,delay:0.05*i}}
-              className="grid gap-8 py-16 md:grid-cols-[1fr_2fr] md:gap-20">
+            <motion.div key={i} initial={{ opacity:0, x:-30 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:0.7, delay:0.05*i, ease:E }}
+              className="grid gap-8 py-14 md:grid-cols-[1fr_2fr] md:gap-20" style={{ borderBottom:"1px solid rgba(0,0,0,0.07)" }}>
               <div>
-                <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.22em] text-violet-600/50">{s.n}</p>
-                <h2 className="font-['Instrument_Serif'] italic text-3xl text-white">{s.title}</h2>
-                <p className="mt-2 font-mono text-xs italic text-violet-300/55">{s.headline}</p>
+                <p style={SF} className="text-xs font-semibold uppercase tracking-widest mb-2 text-gray-400">{s.n}</p>
+                <h2 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mb-1">{s.title}</h2>
+                <p style={{ ...SF, color:"#7c3aed" }} className="text-sm font-medium">{s.headline}</p>
               </div>
               <div>
-                <p className="mb-8 font-mono text-sm leading-[1.9] text-white/38">{s.desc}</p>
-                <ul className="space-y-2.5">
+                <p style={SF} className="text-gray-500 leading-relaxed mb-6">{s.desc}</p>
+                <ul className="space-y-2.5 mb-8">
                   {s.details.map(d=>(
-                    <li key={d} className="flex items-start gap-2.5 font-mono text-xs text-white/30"><span className="mt-[3px] shrink-0 text-[7px] text-violet-500">◆</span>{d}</li>
+                    <motion.li key={d} style={SF} className="flex items-start gap-2 text-sm text-gray-600" whileHover={{ x:4 }}>
+                      <span style={{ color:"#7c3aed" }} className="mt-0.5 shrink-0">✓</span>{d}
+                    </motion.li>
                   ))}
                 </ul>
-                <div className="mt-8">
-                  <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white/35 transition hover:border-violet-400/25 hover:text-white">Enquire about this</button>
-                </div>
+                <BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Enquire about this</BlurBtn>
               </div>
             </motion.div>
           ))}
@@ -866,152 +923,158 @@ function ServicesPage({goto}:{goto:(p:Page)=>void}){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ABOUT
+// ABOUT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
-function AboutPage({goto}:{goto:(p:Page)=>void}){
-  const values=[
-    {title:"Calm over chaos",  desc:"We build systems that reduce noise, not add to it. Every decision is guided by what creates the most clarity."},
-    {title:"Precision",         desc:"We don't ship until it works exactly as intended. We'd rather take an extra day than deliver something that's almost right."},
-    {title:"No hype",           desc:"We say what we mean. No inflated promises, no manufactured urgency. If something isn't the right fit, we say so."},
-    {title:"Human at the core", desc:"AI should handle the repetitive so people can focus on what only humans can do. That's the only version of automation worth building."},
+function AboutPage({ goto }: { goto:(p:Page)=>void }) {
+  const values = [
+    { title:"Calm over chaos",   desc:"We build systems that reduce noise, not add to it. Every decision is guided by what creates the most clarity." },
+    { title:"Precision",          desc:"We don't ship until it works exactly as intended. We'd rather take an extra day than deliver something that's almost right." },
+    { title:"No hype",            desc:"We say what we mean. No inflated promises, no manufactured urgency. If something isn't the right fit, we say so." },
+    { title:"Human at the core",  desc:"AI should handle the repetitive so people can focus on what only humans can do. That's the only version of automation worth building." },
   ];
-  return(
-    <div className="relative z-10 px-6 pt-36 pb-24">
+  return (
+    <div className="pt-32 pb-24 px-6">
       <div className="mx-auto max-w-6xl">
-        <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}} className="mb-32">
-          <Tag>About</Tag>
-          <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(56px,8vw,120px)"}}>Built with<br /><em className="text-violet-300">intention.</em></h1>
+        <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8 }} className="mb-32">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">About</p>
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(44px,7vw,100px)" }} className="text-gray-900 leading-[0.88] mb-8">Built with<br/><em style={{ color:"#7c3aed" }}>intention.</em></h1>
           <div className="grid gap-10 md:grid-cols-[1fr_1.2fr]">
-            <p className="font-mono text-sm leading-[1.9] text-white/38">quazieR started with a simple observation: great businesses were losing customers not because of their product or service — but because they couldn&apos;t respond fast enough.</p>
-            <p className="font-mono text-sm leading-[1.9] text-white/38">Michael and Badre built quazieR to close that gap permanently. Not with an app that creates more to-do items, but with systems that operate in the background, silently handling communication.</p>
+            <p style={SF} className="text-gray-500 leading-relaxed">quazieR started with a simple observation: great businesses were losing customers not because of their product or service — but because they couldn&apos;t respond fast enough.</p>
+            <p style={SF} className="text-gray-500 leading-relaxed">Michael and Badre built quazieR to close that gap permanently. Not with an app that creates more to-do items, but with systems that operate in the background, silently handling communication.</p>
           </div>
         </motion.div>
-        <motion.div initial={{opacity:0,scale:0.9}} whileInView={{opacity:1,scale:1}} viewport={{once:true}} transition={{duration:1.2,ease:E}} className="mb-32 flex justify-center">
-          <IllustrationOrbitNetwork/>
-        </motion.div>
-        <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mb-32">
-          <Tag>The team</Tag>
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
+        <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="mb-32">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-8">The team</p>
+          <div className="grid gap-6 md:grid-cols-2">
             {[
-              {name:"Michael Brito",   role:"Co-founder",bio:"Systems architect with a background in automation engineering and product design. Obsessed with removing friction from complex workflows."},
-              {name:"Badre Elkhammal",role:"Co-founder",bio:"Growth operator and AI integration specialist. Has built and scaled sales automation systems for dozens of service businesses."},
+              { name:"Michael Brito",   role:"Co-founder", bio:"Systems architect with a background in automation engineering and product design. Obsessed with removing friction from complex workflows." },
+              { name:"Badre Elkhammal", role:"Co-founder", bio:"Growth operator and AI integration specialist. Has built and scaled sales automation systems for dozens of service businesses." },
             ].map((f,i)=>(
-              <motion.div key={i} initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.85,ease:E,delay:i*0.12}}
-                className="rounded-2xl border border-violet-500/[0.12] bg-violet-950/[0.1] p-8">
-                <div className="mb-4 h-px w-12 bg-violet-500/40"/>
-                <h3 className="mb-1 font-['Instrument_Serif'] italic text-2xl text-white">{f.name}</h3>
-                <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-violet-400/60">{f.role}</p>
-                <p className="font-mono text-xs leading-relaxed text-white/35">{f.bio}</p>
+              <motion.div key={i} initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.7, delay:i*0.12 }}
+                whileHover={{ y:-5 }}
+                className="rounded-2xl p-8"
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                <div className="h-px w-10 mb-6" style={{ background:"linear-gradient(90deg,#7c3aed,#a855f7)" }}/>
+                <h3 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mb-1">{f.name}</h3>
+                <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">{f.role}</p>
+                <p style={SF} className="text-sm text-gray-500 leading-relaxed">{f.bio}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
-        <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="mb-32">
-          <Tag>Our values</Tag>
-          <div className="mt-10 grid gap-px border border-violet-500/[0.1] md:grid-cols-2">
+        <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="mb-32">
+          <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-8">Our values</p>
+          <div className="grid gap-4 md:grid-cols-2">
             {values.map((v,i)=>(
-              <motion.div key={i} initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{delay:i*0.1}}
-                className="bg-[#06060c] p-8 transition-colors hover:bg-violet-950/[0.15]">
-                <p className="mb-3 font-['Instrument_Serif'] italic text-xl text-white">{v.title}</p>
-                <p className="font-mono text-xs leading-relaxed text-white/30">{v.desc}</p>
+              <motion.div key={i} initial={{ opacity:0, scale:0.97 }} whileInView={{ opacity:1, scale:1 }} viewport={{ once:true }} transition={{ delay:i*0.1 }}
+                whileHover={{ y:-4 }}
+                className="rounded-2xl p-7"
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
+                <p style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{v.title}</p>
+                <p style={SF} className="text-sm text-gray-500 leading-relaxed">{v.desc}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
-        <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}} className="border-t border-white/[0.05] pt-20 text-center">
-          <blockquote className="mx-auto max-w-3xl font-['Instrument_Serif'] italic font-light leading-[1.5] text-white/55" style={{fontSize:"clamp(24px,3vw,42px)"}}>
+        <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }}
+          className="rounded-3xl p-14 text-center relative overflow-hidden"
+          style={{ background:"linear-gradient(135deg,#111,#2d2d2d)" }}>
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage:"linear-gradient(rgba(255,255,255,0.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize:"40px 40px" }}/>
+          <blockquote style={{ ...IF, fontStyle:"italic", fontSize:"clamp(20px,2.5vw,32px)" }} className="font-light text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed relative z-10">
             &ldquo;Automation should feel human, calm, and trustworthy — not aggressive, robotic, or overwhelming.&rdquo;
           </blockquote>
-          <div className="mt-8 h-px w-12 mx-auto bg-violet-500/30"/>
-          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/20">Michael &amp; Badre, quazieR</p>
+          <p style={SF} className="text-sm text-white/50 mb-8 relative z-10">Michael &amp; Badre, quazieR</p>
+          <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
+            style={{ ...SF, background:"rgba(255,255,255,0.12)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.25)" }}
+            className="px-8 py-4 rounded-full text-sm font-semibold text-white relative z-10">Work with us</motion.button>
         </motion.div>
-        <div className="mt-24 flex justify-center">
-          <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-4 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Work with us</button>
-        </div>
       </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONTACT
+// CONTACT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
-function ContactPage(){
-  return(
-    <div className="relative z-10 px-6 pt-36 pb-24">
-      <div className="pointer-events-none absolute top-0 right-0 h-[600px] w-[400px] bg-violet-600/[0.06] blur-[150px]"/>
+function ContactPage() {
+  return (
+    <div className="pt-32 pb-24 px-6">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-16 md:grid-cols-[1fr_1.4fr]">
-          <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}}>
-            <Tag>Contact</Tag>
-            <h1 className="mb-8 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(48px,6vw,90px)"}}>Let&apos;s talk<br /><em className="text-violet-300">about your business.</em></h1>
-            <p className="mb-12 font-mono text-sm leading-[1.9] text-white/35">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
-            <div className="space-y-6">
+          <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, ease:E }}>
+            <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Contact</p>
+            <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5.5vw,80px)" }} className="text-gray-900 leading-[0.88] mb-6">
+              Let&apos;s talk<br/><em style={{ color:"#7c3aed" }}>about your business.</em>
+            </h1>
+            <p style={SF} className="text-gray-500 leading-relaxed mb-12">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
+            <div className="space-y-6 mb-10">
               {[{label:"Email",value:"quazier.ai@gmail.com"},{label:"Phone / WhatsApp",value:"(518) 662-3244"},{label:"Based in",value:"Available worldwide"}].map(c=>(
-                <div key={c.label}><p className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/22">{c.label}</p><p className="mt-1 font-mono text-sm text-white/55">{c.value}</p></div>
-              ))}
-            </div>
-            <div className="mt-10 flex justify-start"><IllustrationSignalRings/></div>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                <span key={t} className="flex items-center gap-1.5 rounded-full border border-violet-500/[0.15] px-3 py-1 font-mono text-[10px] text-white/28"><span className="h-1 w-1 rounded-full bg-violet-500"/>{t}</span>
-              ))}
-            </div>
-          </motion.div>
-          <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:0.15}}
-            className="rounded-2xl border border-violet-500/[0.12] bg-white/[0.02] p-8 md:p-10 flex flex-col items-center justify-center text-center gap-8">
-            <div>
-              <div className="mb-6 h-px w-12 mx-auto bg-violet-500/50"/>
-              <h3 className="mb-4 font-['Instrument_Serif'] italic leading-[1.1] text-white" style={{fontSize:"clamp(28px,3.5vw,42px)"}}>Book a free<br/><em className="text-violet-300">20-min call.</em></h3>
-              <p className="font-mono text-sm leading-[1.9] text-white/35 max-w-sm mx-auto">Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.</p>
-            </div>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
-              {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                <div key={t} className="flex items-center gap-3 rounded-lg border border-violet-500/[0.12] bg-white/[0.02] px-4 py-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0"/>
-                  <span className="font-mono text-xs text-white/45">{t}</span>
+                <div key={c.label}>
+                  <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{c.label}</p>
+                  <p style={SF} className="text-gray-700 font-medium">{c.value}</p>
                 </div>
               ))}
             </div>
-            {/* ✅ TRACKING: fbq Lead fired on click */}
-            <a
-              href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackLead()}
-              className="w-full max-w-xs rounded-lg bg-violet-600 py-4 font-mono text-xs uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] transition hover:bg-violet-500 text-center block">
+            {/* Social in contact too */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              <motion.a href="https://www.instagram.com/quazier.ai" target="_blank" rel="noopener noreferrer"
+                whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" stroke="none"/>
+                </svg>
+                Instagram
+              </motion.a>
+              <motion.a href="https://www.facebook.com/profile.php?id=61585053252637" target="_blank" rel="noopener noreferrer"
+                whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                </svg>
+                Facebook
+              </motion.a>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
+                <span key={t} style={{ ...SF, background:"rgba(124,58,237,0.06)", border:"1px solid rgba(124,58,237,0.15)" }} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-gray-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-400"/>{t}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, ease:E, delay:0.15 }}
+            className="rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-8"
+            style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 24px 64px rgba(124,58,237,0.08)" }}>
+            <div>
+              <div className="h-1 w-14 mx-auto mb-6 rounded-full" style={{ background:"linear-gradient(90deg,#7c3aed,#a855f7)" }}/>
+              <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(26px,3.5vw,40px)" }} className="text-gray-900 mb-3">
+                Book a free<br/><em style={{ color:"#7c3aed" }}>20-min call.</em>
+              </h3>
+              <p style={SF} className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.</p>
+            </div>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
+                <motion.div key={t} whileHover={{ x:4 }} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background:"rgba(124,58,237,0.04)", border:"1px solid rgba(124,58,237,0.1)" }}>
+                  <span className="h-2 w-2 rounded-full shrink-0 bg-purple-400"/>
+                  <span style={SF} className="text-sm text-gray-600">{t}</span>
+                </motion.div>
+              ))}
+            </div>
+            <motion.a href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG" target="_blank" rel="noopener noreferrer"
+              onClick={()=>trackLead()}
+              whileHover={{ scale:1.05, y:-3, boxShadow:"0 16px 48px rgba(124,58,237,0.35)" }} whileTap={{ scale:0.97 }}
+              style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.28)" }}
+              className="w-full max-w-xs py-4 rounded-full text-sm font-semibold text-white text-center block">
               Book your free call →
-            </a>
-            <p className="font-mono text-[10px] text-white/18">Opens our scheduling page — pick any available slot</p>
+            </motion.a>
+            <p style={SF} className="text-xs text-gray-400">Opens our scheduling page — pick any available slot</p>
           </motion.div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 404
-// ═══════════════════════════════════════════════════════════════════════════════
-function NotFoundPage({goto}:{goto:(p:Page)=>void}){
-  return(
-    <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({length:12},(_,i)=>(
-          <motion.div key={i} className="absolute border border-violet-500/[0.1] rounded-full"
-            style={{width:80+i*80,height:80+i*80,top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}
-            animate={{scale:[1,1.02,1],opacity:[0.4,0.7,0.4]}} transition={{duration:4+i*0.4,repeat:Infinity,ease:"easeInOut",delay:i*0.2}}/>
-        ))}
-      </div>
-      <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E}} className="relative">
-        <p className="mb-4 font-mono text-[9px] uppercase tracking-[0.28em] text-violet-400/60">Error 404</p>
-        <h1 className="mb-6 font-['Instrument_Serif'] italic leading-[0.88] text-white" style={{fontSize:"clamp(80px,14vw,200px)"}}>Lost.</h1>
-        <p className="mb-12 font-mono text-sm text-white/30">This page doesn&apos;t exist. But your leads shouldn&apos;t get this treatment — let&apos;s fix that.</p>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <button onClick={()=>goto("home")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Back to home</button>
-          <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/40 transition hover:border-violet-400/25 hover:text-white">Contact us</button>
-        </div>
-      </motion.div>
     </div>
   );
 }
@@ -1019,23 +1082,26 @@ function NotFoundPage({goto}:{goto:(p:Page)=>void}){
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function Home(){
-  const [page,setPage]=useState<Page>("home");
-  const goto=(p:Page)=>{window.scrollTo({top:0,behavior:"smooth"});setTimeout(()=>setPage(p),120);};
-  return(
-    <div className="min-h-screen bg-[#06060c] text-white selection:bg-violet-500/30">
+export default function Home() {
+  const [page, setPage] = useState<Page>("home");
+  const goto = (p: Page) => { window.scrollTo({ top:0, behavior:"smooth" }); setTimeout(()=>setPage(p), 120); };
+  return (
+    <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={SF}>
       <Background/>
-      <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
-        style={{backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,backgroundRepeat:"repeat",backgroundSize:"128px 128px"}}/>
+      <FloatingParticles/>
+      <CursorGlow/>
       <Nav current={page} goto={goto}/>
       <AnimatePresence mode="wait">
-        <motion.main key={page} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.3}}>
-          {page==="home"     &&<HomePage    goto={goto}/>}
-          {page==="pricing"  &&<PricingPage goto={goto}/>}
-          {page==="services" &&<ServicesPage goto={goto}/>}
-          {page==="about"    &&<AboutPage   goto={goto}/>}
-          {page==="contact"  &&<ContactPage/>}
-          {page==="404"      &&<NotFoundPage goto={goto}/>}
+        <motion.main key={page}
+          initial={{ opacity:0, y:12, filter:"blur(4px)" }}
+          animate={{ opacity:1, y:0, filter:"blur(0px)" }}
+          exit={{ opacity:0, y:-12, filter:"blur(4px)" }}
+          transition={{ duration:0.35, ease:E }}>
+          {page==="home"     && <HomePage    goto={goto}/>}
+          {page==="pricing"  && <PricingPage goto={goto}/>}
+          {page==="services" && <ServicesPage goto={goto}/>}
+          {page==="about"    && <AboutPage   goto={goto}/>}
+          {page==="contact"  && <ContactPage/>}
         </motion.main>
       </AnimatePresence>
       <Footer goto={goto}/>

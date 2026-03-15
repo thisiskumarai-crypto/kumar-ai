@@ -4,12 +4,8 @@ import Script from "next/script";
 export const metadata = {
   title: "quazieR — AI Automation Studio",
   description: "AI automation systems that answer calls, respond to messages, and follow up with leads automatically.",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  other: {
-    "facebook-domain-verification": "0dhltpo21kykz6096pqobw2cvzm30e",
-  },
+  icons: { icon: "/favicon.ico" },
+  other: { "facebook-domain-verification": "0dhltpo21kykz6096pqobw2cvzm30e" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +13,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
-
+        {/* Instrument Serif - Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+        {/* Satoshi - Fontshare */}
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet" />
         {/* Meta Pixel */}
         <Script id="meta-pixel" strategy="beforeInteractive">
           {`
@@ -35,12 +36,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
         <noscript>
           <img height="1" width="1" style={{display:"none"}}
-            src="https://www.facebook.com/tr?id=4281485712125763&ev=PageView&noscript=1"
-          />
+            src="https://www.facebook.com/tr?id=4281485712125763&ev=PageView&noscript=1" />
         </noscript>
-
       </head>
-      <body className="relative bg-black text-white overflow-x-hidden">
+      <body className="overflow-x-hidden">
         {children}
       </body>
     </html>
