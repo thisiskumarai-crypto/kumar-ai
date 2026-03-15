@@ -6,6 +6,13 @@ import { useRef, useState } from "react";
 const E = [0.16, 1, 0.3, 1] as const;
 type Page = "home" | "pricing" | "services" | "contact" | "about" | "404";
 
+// helper
+function trackLead() {
+  if (typeof window !== "undefined" && (window as any).fbq) {
+    (window as any).fbq("track", "Lead");
+  }
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const TICKER = ["AI Voice Receptionist","24/7 Availability","WhatsApp & SMS","CRM Integration","Follow-Up Sequences","No Missed Calls","Instant Response","AI-Powered Websites","n8n Workflows","Custom Automation","Real-Time Alerts"];
 const STATS = [{ n: "78%", l: "of customers buy from whoever responds first." },{ n: "< 1m", l: "ideal response window for a fresh inbound lead." },{ n: "3×", l: "more revenue closed with automated follow-ups." }];
@@ -40,14 +47,6 @@ const N8N_FEATURES = [
   { title:"Monitoring & Alerting", desc:"Real-time visibility into every run. Alerts when something breaks. Logs for everything." },
 ];
 type Msg = { role: "user" | "ai"; text: string };
-const FLOW: Msg[] = [
-  { role:"user", text:"Hi, I'm interested in your services." },
-  { role:"ai",   text:"Hi. I'm the quazieR AI. What kind of business do you run?" },
-  { role:"user", text:"I run a real estate agency." },
-  { role:"ai",   text:"Got it. Are you currently missing calls or follow-ups with leads?" },
-  { role:"user", text:"Yes, constantly." },
-  { role:"ai",   text:"We can fix that. Our AI handles every call and follows up automatically. Want to book a free call?" },
-];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BACKGROUND
@@ -96,9 +95,6 @@ function Background(){
 // ═══════════════════════════════════════════════════════════════════════════════
 // SVG ILLUSTRATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
-
-// FIX: Pre-calculate all Math.cos/sin values as constants to avoid SSR/client
-// floating-point precision mismatches that cause hydration errors.
 const ORBIT_LINES = [0, 72, 144, 216, 288].map((angle) => ({
   x2: parseFloat((160 + 140 * Math.cos((angle * Math.PI) / 180)).toFixed(4)),
   y2: parseFloat((160 + 140 * Math.sin((angle * Math.PI) / 180)).toFixed(4)),
@@ -171,7 +167,6 @@ function IllustrationVoiceWave(){
     <svg width="280" height="80" viewBox="0 0 280 80" fill="none" className="w-full max-w-[280px]">
       {bars.map(i=>{
         const x=8+i*8;
-        // Clamp bh to always be positive — Math.sin can return negative values
         const bh=Math.max(2, 8+Math.abs(Math.sin(i*0.5))*12+Math.abs(Math.sin(i*0.3))*8);
         const h1=Math.max(1,bh);
         const h2=Math.max(1,bh*2.2);
@@ -179,10 +174,7 @@ function IllustrationVoiceWave(){
         const h4=Math.max(1,bh*1.8);
         return(
           <motion.rect key={i} x={x} width="3" rx="1.5" fill="rgba(139,92,246,0.7)"
-            animate={{
-              height:[h1,h2,h3,h4,h1],
-              y:[40-h1/2,40-h2/2,40-h3/2,40-h4/2,40-h1/2]
-            }}
+            animate={{height:[h1,h2,h3,h4,h1],y:[40-h1/2,40-h2/2,40-h3/2,40-h4/2,40-h1/2]}}
             transition={{duration:1.4+i*0.04,repeat:Infinity,ease:"easeInOut",delay:i*0.05}}/>
         );
       })}
@@ -284,7 +276,7 @@ function Nav({current,goto}:{current:Page;goto:(p:Page)=>void}){
             </button>
           ))}
           <div className="w-px h-4 bg-white/[0.12] mx-1"/>
-          <button onClick={()=>goto("contact")} className="px-4 py-1.5 rounded-full bg-violet-600 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 shadow-[0_0_18px_rgba(124,58,237,0.45)]">Get started</button>
+          <button onClick={()=>{ trackLead(); goto("contact"); }} className="px-4 py-1.5 rounded-full bg-violet-600 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 shadow-[0_0_18px_rgba(124,58,237,0.45)]">Get started</button>
         </nav>
         <nav className="flex md:hidden items-center gap-3 px-4 py-2.5 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/[0.12] shadow-[0_0_40px_rgba(124,58,237,0.2)]">
           <button onClick={()=>goto("home")} className="font-['Instrument_Serif'] italic text-white text-base">quazieR</button>
@@ -308,7 +300,7 @@ function Nav({current,goto}:{current:Page;goto:(p:Page)=>void}){
                 </button>
               ))}
               <div className="my-1 h-px bg-white/[0.06]"/>
-              <button onClick={()=>{goto("contact");setOpen(false);}} className="w-full rounded-xl bg-violet-600 px-4 py-3 font-mono text-xs uppercase tracking-[0.18em] text-white hover:bg-violet-500 transition-colors">Get started</button>
+              <button onClick={()=>{ trackLead(); goto("contact"); setOpen(false); }} className="w-full rounded-xl bg-violet-600 px-4 py-3 font-mono text-xs uppercase tracking-[0.18em] text-white hover:bg-violet-500 transition-colors">Get started</button>
             </div>
           </motion.div>
         )}
@@ -390,7 +382,6 @@ function ChatDemo(){
 
   const onKey=(e:React.KeyboardEvent)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}};
 
-  // Auto-scroll to bottom
   useState(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"})});
 
   return(
@@ -480,7 +471,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
           </motion.p>
           <motion.div initial={{opacity:0,y:25}} animate={{opacity:1,y:0}} transition={{duration:1,ease:E,delay:1.0}} className="flex flex-wrap items-center justify-center gap-4">
             <button onClick={()=>goto("pricing")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.5)] transition hover:bg-violet-500 hover:shadow-[0_0_44px_rgba(124,58,237,0.65)]">See pricing</button>
-            <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.12] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/55 transition hover:border-violet-400/35 hover:bg-violet-500/[0.08] hover:text-white">Contact us</button>
+            <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.12] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/55 transition hover:border-violet-400/35 hover:bg-violet-500/[0.08] hover:text-white">Contact us</button>
             <button onClick={()=>document.getElementById("demo-section")?.scrollIntoView({behavior:"smooth"})}
               className="inline-flex items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/[0.08] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/[0.15] hover:text-white">
               💬 Try our AI
@@ -592,7 +583,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
         </div>
       </section>
 
-      {/* How it works illustration break */}
+      {/* How it works */}
       <section className="relative z-10 py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E}}
@@ -666,7 +657,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
                     <li key={f} className="flex items-start gap-2 font-mono text-[11px] text-white/32"><span className="mt-[3px] shrink-0 text-[7px] text-violet-500">◆</span>{f}</li>
                   ))}
                 </ul>
-                <button onClick={()=>goto("contact")} className={`mt-auto block rounded-lg py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-400/70 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/40 hover:border-violet-400/25 hover:text-white"}`}>
+                <button onClick={()=>{ trackLead(); goto("contact"); }} className={`mt-auto block rounded-lg py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-400/70 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/40 hover:border-violet-400/25 hover:text-white"}`}>
                   {p.custom?"Get a quote":"Get started"}
                 </button>
               </motion.div>
@@ -715,7 +706,7 @@ function HomePage({goto}:{goto:(p:Page)=>void}){
             <motion.div initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:1,ease:E,delay:0.15}} className="flex flex-col justify-center">
               <p className="mb-8 font-mono text-sm leading-[1.9] text-white/38">No pressure. No obligation. Just a clear conversation about your business, your workflow, and whether quazieR is the right system for you.<br/><br/><span className="text-white">Most clients are live within 48 hours.</span> We handle everything — you just show up.</p>
               <div className="flex flex-wrap gap-3">
-                <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Start the conversation</button>
+                <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Start the conversation</button>
                 <button onClick={()=>goto("pricing")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/45 transition hover:border-violet-400/25 hover:bg-violet-500/[0.07] hover:text-white">See pricing</button>
               </div>
               <div className="mt-7 flex flex-wrap gap-3">
@@ -777,7 +768,7 @@ function PricingPage({goto}:{goto:(p:Page)=>void}){
                     <li key={f} className="flex items-start gap-2.5 font-mono text-[11px] text-white/35"><span className="mt-[3px] shrink-0 text-[7px] text-violet-500">◆</span>{f}</li>
                   ))}
                 </ul>
-                <button onClick={()=>goto("contact")} className={`mt-auto block rounded-lg py-3 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-300/60 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/38 hover:border-violet-400/25 hover:text-white"}`}>
+                <button onClick={()=>{ trackLead(); goto("contact"); }} className={`mt-auto block rounded-lg py-3 text-center font-mono text-[10px] uppercase tracking-[0.15em] transition ${p.hot?"bg-violet-600 text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] hover:bg-violet-500":p.custom?"border border-violet-400/25 text-violet-300/60 hover:border-violet-400/45 hover:text-violet-300":"border border-white/[0.08] text-white/38 hover:border-violet-400/25 hover:text-white"}`}>
                   {p.custom?"Request a quote":"Get started"}
                 </button>
               </motion.div>
@@ -803,7 +794,7 @@ function PricingPage({goto}:{goto:(p:Page)=>void}){
                 ))}
               </div>
               <div className="mt-8">
-                <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/25 px-6 py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/10">Discuss your workflow</button>
+                <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/25 px-6 py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-violet-300 transition hover:bg-violet-500/10">Discuss your workflow</button>
               </div>
             </div>
           </div>
@@ -863,7 +854,7 @@ function ServicesPage({goto}:{goto:(p:Page)=>void}){
                   ))}
                 </ul>
                 <div className="mt-8">
-                  <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white/35 transition hover:border-violet-400/25 hover:text-white">Enquire about this</button>
+                  <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-white/35 transition hover:border-violet-400/25 hover:text-white">Enquire about this</button>
                 </div>
               </div>
             </motion.div>
@@ -935,7 +926,7 @@ function AboutPage({goto}:{goto:(p:Page)=>void}){
           <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/20">Michael &amp; Badre, quazieR</p>
         </motion.div>
         <div className="mt-24 flex justify-center">
-          <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-4 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Work with us</button>
+          <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-8 py-4 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_28px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Work with us</button>
         </div>
       </div>
     </div>
@@ -946,10 +937,6 @@ function AboutPage({goto}:{goto:(p:Page)=>void}){
 // CONTACT
 // ═══════════════════════════════════════════════════════════════════════════════
 function ContactPage(){
-  const [form,setForm]=useState({name:"",email:"",business:"",message:""});
-  const [sent,setSent]=useState(false);
-  const handle=(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>setForm({...form,[e.target.name]:e.target.value});
-  const submit=(e:React.FormEvent)=>{e.preventDefault();setSent(true);};
   return(
     <div className="relative z-10 px-6 pt-36 pb-24">
       <div className="pointer-events-none absolute top-0 right-0 h-[600px] w-[400px] bg-violet-600/[0.06] blur-[150px]"/>
@@ -986,7 +973,12 @@ function ContactPage(){
                 </div>
               ))}
             </div>
-            <a href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG" target="_blank" rel="noopener noreferrer"
+            {/* ✅ TRACKING: fbq Lead fired on click */}
+            <a
+              href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackLead()}
               className="w-full max-w-xs rounded-lg bg-violet-600 py-4 font-mono text-xs uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(124,58,237,0.35)] transition hover:bg-violet-500 text-center block">
               Book your free call →
             </a>
@@ -1017,7 +1009,7 @@ function NotFoundPage({goto}:{goto:(p:Page)=>void}){
         <p className="mb-12 font-mono text-sm text-white/30">This page doesn&apos;t exist. But your leads shouldn&apos;t get this treatment — let&apos;s fix that.</p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <button onClick={()=>goto("home")} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white shadow-[0_0_24px_rgba(124,58,237,0.4)] transition hover:bg-violet-500">Back to home</button>
-          <button onClick={()=>goto("contact")} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/40 transition hover:border-violet-400/25 hover:text-white">Contact us</button>
+          <button onClick={()=>{ trackLead(); goto("contact"); }} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-7 py-3.5 font-mono text-xs uppercase tracking-[0.15em] text-white/40 transition hover:border-violet-400/25 hover:text-white">Contact us</button>
         </div>
       </motion.div>
     </div>
