@@ -33,10 +33,10 @@ const COMPARE = [
   ["Lock-in contract","None — cancel anytime","Varies"],
 ];
 const PLANS = [
-  { n:"01", title:"Website",         desc:"High-conversion website connected to AI systems.",             setup:"$100", mo:"$200", features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","Basic analytics"], hot:false, custom:false },
-  { n:"02", title:"AI Voice & Chat", desc:"24/7 AI receptionist answering calls and messages.",            setup:"$100", mo:"$300", features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"], hot:true, custom:false },
-  { n:"03", title:"Full Automation", desc:"Website + AI receptionist + automated follow-ups.",             setup:"$150", mo:"$400", features:["Everything in Website","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"], hot:false, custom:false },
-  { n:"04", title:"Custom / n8n",    desc:"Bespoke workflow automation built on n8n — engineered around your exact process.", setup:"Custom", mo:"Custom", features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true },
+  { n:"01", title:"AI Website System",              desc:"High-conversion website, lead capture, AI integrations, mobile optimization, and analytics.",                                                                        setup:"$250", mo:"$399",    features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","AI integrations","Analytics & tracking"], hot:false, custom:false },
+  { n:"02", title:"AI Voice & Chat Receptionist",   desc:"24/7 AI phone receptionist, WhatsApp & SMS automation, lead qualification, CRM integration, and reporting.",                                                         setup:"$350", mo:"$699",    features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"], hot:true, custom:false },
+  { n:"03", title:"Full AI Automation System",      desc:"Everything in AI Website + AI Voice & Chat — the complete system to capture, qualify, and follow up with every lead automatically.",                                  setup:"$500", mo:"$1,299",  features:["Everything in AI Website System","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"], hot:false, custom:false },
+  { n:"04", title:"Custom / n8n",                   desc:"Bespoke workflow automation built on n8n — engineered around your exact process.",                                                                                    setup:"Custom", mo:"Custom",features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true },
 ];
 const N8N_FEATURES = [
   { title:"Workflow Architecture", desc:"We design end-to-end automation graphs tailored to your exact business logic — not templates, not shortcuts." },
@@ -745,7 +745,7 @@ function PricingPage({goto}:{goto:(p:Page)=>void}){
         </motion.div>
         <div className="grid gap-px border border-violet-500/[0.1] md:grid-cols-4">
           {PLANS.map((p,i)=>{
-            const moPrice=p.custom?null:parseInt(p.mo.replace("$",""));
+            const moPrice=p.custom?null:parseInt(p.mo.replace("$","").replace(",",""));
             const displayPrice=moPrice?(annual?`$${Math.round(moPrice*0.8)}`:p.mo):null;
             return(
               <motion.div key={i} initial={{opacity:0,y:55}} animate={{opacity:1,y:0}} transition={{duration:0.9,ease:E,delay:i*0.1}}
