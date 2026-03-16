@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 
 type Page = "home" | "pricing" | "services" | "contact" | "about";
 type Msg  = { role: "user" | "ai"; text: string };
@@ -218,180 +218,72 @@ function CustomCursor() {
   );
 }
 
-// ─── CLOUD BACKGROUND ─────────────────────────────────────────────────────────
-function CloudBackground() {
-  // SVG cloud shape as a reusable component
-  const clouds = [
-    { w:520, h:220, top:"-4%",  left:"-6%",  opacity:0.82, dur:80, delay:0,   scale:1 },
-    { w:380, h:170, top:"5%",   left:"55%",  opacity:0.65, dur:100,delay:-22, scale:0.9 },
-    { w:300, h:140, top:"18%",  left:"78%",  opacity:0.5,  dur:120,delay:-45, scale:0.85 },
-    { w:460, h:200, top:"42%",  left:"-8%",  opacity:0.45, dur:95, delay:-18, scale:1.05 },
-    { w:250, h:120, top:"60%",  left:"65%",  opacity:0.38, dur:85, delay:-38, scale:0.8 },
-    { w:340, h:155, top:"75%",  left:"30%",  opacity:0.3,  dur:110,delay:-60, scale:0.9 },
-    { w:200, h:100, top:"30%",  left:"42%",  opacity:0.22, dur:130,delay:-70, scale:0.75 },
-    { w:420, h:190, top:"88%",  left:"-3%",  opacity:0.28, dur:90, delay:-10, scale:1 },
-  ];
-
+// ─── LIQUID WAVES ─────────────────────────────────────────────────────────────
+// Pure CSS SVG waves — zero JS runtime, GPU-composited, no lag
+function LiquidWaves() {
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
-      {clouds.map((c, i) => (
-        <motion.div key={i}
-          style={{ position:"absolute", top:c.top, left:c.left, width:c.w, height:c.h, opacity:c.opacity }}
-          animate={{ x:["0%","8%","2%","0%"], y:[0,-12,-4,0], scale:[c.scale, c.scale*1.04, c.scale*0.98, c.scale] }}
-          transition={{ duration:c.dur, repeat:Infinity, ease:"easeInOut", delay:c.delay, times:[0,0.33,0.66,1] }}>
-          <svg viewBox="0 0 520 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+    <>
+      <style>{`
+        @keyframes wave1 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes wave2 { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+        @keyframes wave3 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes wave4 { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+        .lw1 { animation: wave1 18s linear infinite; will-change:transform; }
+        .lw2 { animation: wave2 24s linear infinite; will-change:transform; }
+        .lw3 { animation: wave3 14s linear infinite; will-change:transform; }
+        .lw4 { animation: wave4 30s linear infinite; will-change:transform; }
+      `}</style>
+      <div style={{ position:"fixed", inset:0, zIndex:1, pointerEvents:"none", overflow:"hidden" }} aria-hidden>
+
+        {/* Wave 1 — bottom, slow, soft purple */}
+        <div style={{ position:"absolute", bottom:"-2%", left:0, width:"200%", height:"38%", opacity:0.18 }} className="lw1">
+          <svg viewBox="0 0 1440 260" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,160 C180,220 360,80 540,140 C720,200 900,60 1080,130 C1260,200 1350,100 1440,150 L1440,260 L0,260 Z" fill="url(#wg1)"/>
             <defs>
-              <radialGradient id={`cg${i}a`} cx="50%" cy="70%" r="60%">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.98)"/>
-                <stop offset="50%" stopColor="rgba(245,238,255,0.85)"/>
-                <stop offset="100%" stopColor="rgba(230,215,255,0)"/>
-              </radialGradient>
-              <filter id={`blur${i}`}>
-                <feGaussianBlur stdDeviation="6"/>
-              </filter>
+              <linearGradient id="wg1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(167,110,255,0.7)"/>
+                <stop offset="100%" stopColor="rgba(124,58,237,0.15)"/>
+              </linearGradient>
             </defs>
-            {/* Shadow/glow layer */}
-            <g filter={`url(#blur${i})`} opacity="0.3">
-              <ellipse cx="260" cy="175" rx="230" ry="42" fill="rgba(180,150,255,0.4)"/>
-            </g>
-            {/* Cloud body */}
-            <ellipse cx="260" cy="160" rx="235" ry="58" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="160" cy="135" rx="115" ry="80" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="300" cy="125" rx="140" ry="88" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="90"  cy="145" rx="82"  ry="68" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="400" cy="140" rx="100" ry="74" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="240" cy="108" rx="100" ry="72" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="370" cy="118" rx="78"  ry="60" fill={`url(#cg${i}a)`}/>
-            <ellipse cx="145" cy="118" rx="70"  ry="58" fill={`url(#cg${i}a)`}/>
           </svg>
-        </motion.div>
-      ))}
-    </div>
+        </div>
+
+        {/* Wave 2 — bottom, medium, pink */}
+        <div style={{ position:"absolute", bottom:"-4%", left:0, width:"200%", height:"32%", opacity:0.13 }} className="lw2">
+          <svg viewBox="0 0 1440 240" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,120 C200,60 400,180 600,110 C800,40 1000,160 1200,100 C1320,70 1380,140 1440,120 L1440,240 L0,240 Z" fill="url(#wg2)"/>
+            <defs>
+              <linearGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(236,72,153,0.6)"/>
+                <stop offset="100%" stopColor="rgba(167,110,255,0.1)"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* Wave 3 — top, fast, light blue */}
+        <div style={{ position:"absolute", top:"-2%", left:0, width:"200%", height:"28%", opacity:0.1 }} className="lw3">
+          <svg viewBox="0 0 1440 200" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,100 C160,40 320,160 480,90 C640,20 800,140 960,80 C1120,20 1300,120 1440,70 L1440,0 L0,0 Z" fill="url(#wg3)"/>
+            <defs>
+              <linearGradient id="wg3" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stopColor="rgba(130,180,255,0.6)"/>
+                <stop offset="100%" stopColor="rgba(167,110,255,0.08)"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* Wave 4 — mid screen, very subtle, slow */}
+        <div style={{ position:"absolute", top:"38%", left:0, width:"200%", height:"22%", opacity:0.07 }} className="lw4">
+          <svg viewBox="0 0 1440 180" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,90 C240,30 480,150 720,90 C960,30 1200,150 1440,90 L1440,180 L0,180 Z" fill="rgba(124,58,237,1)"/>
+          </svg>
+        </div>
+
+      </div>
+    </>
   );
-}
-
-// ─── PARTICLE SYSTEM ─────────────────────────────────────────────────────────
-function ParticleSystem() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouse = useRef({ x: -9999, y: -9999 });
-
-  useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    let W = window.innerWidth, H = window.innerHeight;
-    canvas.width = W; canvas.height = H;
-
-    const NODE_N = Math.min(80, Math.floor(W*H/14000));
-    const SPARK_N = Math.min(50, Math.floor(W*H/24000));
-    const CONN_DIST = 145, MOUSE_DIST = 190;
-
-    interface Node { x:number; y:number; vx:number; vy:number; r:number; base:number; alpha:number; }
-    interface Spark { x:number; y:number; vx:number; vy:number; life:number; maxLife:number; sz:number; hue:number; }
-
-    const nodes: Node[] = Array.from({length:NODE_N}, () => ({
-      x:Math.random()*W, y:Math.random()*H,
-      vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5,
-      r:1.2+Math.random()*2.2, base:0.25+Math.random()*0.5, alpha:0,
-    }));
-
-    const sparks: Spark[] = Array.from({length:SPARK_N}, () => ({
-      x:Math.random()*W, y:H+Math.random()*200,
-      vx:(Math.random()-0.5)*0.4, vy:-0.3-Math.random()*0.7,
-      life:Math.random()*200, maxLife:100+Math.random()*150,
-      sz:0.7+Math.random()*1.6, hue:255+Math.random()*50,
-    }));
-
-    const t0 = performance.now();
-    let raf: number;
-
-    function tick(now: number) {
-      const elapsed = (now - t0) / 1000;
-      const fade = Math.min(1, elapsed * 0.35);
-      ctx.clearRect(0,0,W,H);
-
-      const mx = mouse.current.x, my = mouse.current.y;
-
-      // ── Sparkles ──
-      for (const sp of sparks) {
-        sp.x += sp.vx; sp.y += sp.vy; sp.life++;
-        if (sp.life > sp.maxLife) {
-          sp.x = Math.random()*W; sp.y = H + 10; sp.life = 0;
-          sp.maxLife = 100+Math.random()*150; sp.vy = -0.3-Math.random()*0.7;
-          sp.hue = 255+Math.random()*50;
-        }
-        const t = sp.life/sp.maxLife;
-        const a = (t<0.25?t/0.25:t>0.65?(1-t)/0.35:1)*fade*0.85;
-        const g = ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,sp.sz*3.5);
-        g.addColorStop(0,`hsla(${sp.hue},75%,72%,${a})`);
-        g.addColorStop(1,`hsla(${sp.hue},75%,72%,0)`);
-        ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.sz*3.5,0,Math.PI*2);
-        ctx.fillStyle=g; ctx.fill();
-        ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.sz*0.5,0,Math.PI*2);
-        ctx.fillStyle=`hsla(${sp.hue},90%,92%,${a})`; ctx.fill();
-      }
-
-      // ── Nodes ──
-      for (const p of nodes) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x<0||p.x>W) p.vx*=-1;
-        if (p.y<0||p.y>H) p.vy*=-1;
-        const dm = Math.hypot(p.x-mx, p.y-my);
-        if (dm < MOUSE_DIST && dm > 0) {
-          const f = (1-dm/MOUSE_DIST)*1.1;
-          p.vx += (p.x-mx)/dm*f; p.vy += (p.y-my)/dm*f;
-          const spd = Math.hypot(p.vx,p.vy);
-          if (spd>3.5) { p.vx=p.vx/spd*3.5; p.vy=p.vy/spd*3.5; }
-        }
-        p.vx *= 0.991; p.vy *= 0.991;
-        p.alpha = p.base * Math.min(1, elapsed*0.5);
-        const pulse = 0.78+0.22*Math.sin(now*0.0009+p.x*0.013);
-        const a = p.alpha * pulse * fade;
-        const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
-        g.addColorStop(0,`rgba(167,110,255,${a})`);
-        g.addColorStop(1,`rgba(124,58,237,0)`);
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r*0.5,0,Math.PI*2);
-        ctx.fillStyle=`rgba(220,195,255,${a*1.4})`; ctx.fill();
-      }
-
-      // ── Connections ──
-      const cf = Math.min(1, elapsed*0.28);
-      for (let i=0;i<nodes.length;i++) {
-        for (let j=i+1;j<nodes.length;j++) {
-          const a=nodes[i], b=nodes[j];
-          const d = Math.hypot(a.x-b.x, a.y-b.y);
-          if (d < CONN_DIST) {
-            const s=(1-d/CONN_DIST)*cf;
-            const lg=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-            lg.addColorStop(0,`rgba(167,110,255,${s*0.4})`);
-            lg.addColorStop(0.5,`rgba(124,58,237,${s*0.58})`);
-            lg.addColorStop(1,`rgba(167,110,255,${s*0.4})`);
-            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
-            ctx.strokeStyle=lg; ctx.lineWidth=s*2; ctx.stroke();
-          }
-        }
-        const p=nodes[i], dm=Math.hypot(p.x-mx, p.y-my);
-        if (dm < MOUSE_DIST*1.35) {
-          const s=(1-dm/(MOUSE_DIST*1.35))*cf;
-          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mx,my);
-          ctx.strokeStyle=`rgba(200,170,255,${s*0.75})`; ctx.lineWidth=s*2.8; ctx.stroke();
-        }
-      }
-
-      raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-
-    const onMove = (e:MouseEvent) => { mouse.current.x=e.clientX; mouse.current.y=e.clientY; };
-    const onLeave = () => { mouse.current.x=-9999; mouse.current.y=-9999; };
-    const onResize = () => { W=window.innerWidth; H=window.innerHeight; canvas.width=W; canvas.height=H; };
-    window.addEventListener("mousemove",onMove);
-    window.addEventListener("mouseleave",onLeave);
-    window.addEventListener("resize",onResize);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseleave",onLeave); window.removeEventListener("resize",onResize); };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:2, pointerEvents:"none", width:"100%", height:"100%" }}/>;
 }
 
 // ─── AURORA ORBS ─────────────────────────────────────────────────────────────
@@ -734,7 +626,8 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
 
         {/* Stats card */}
         <motion.div initial={{ opacity:0, y:65, scale:0.93 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:1.2, ease:E, delay:1.1 }}
-          className="mx-auto mt-24 max-w-4xl rounded-3xl overflow-hidden" style={{ position:"relative", zIndex:4, background:"rgba(255,255,255,0.58)", backdropFilter:"blur(26px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 30px 80px rgba(124,58,237,0.12),0 2px 0 rgba(255,255,255,0.8) inset" }}>
+          className="mx-auto mt-24 max-w-4xl rounded-3xl overflow-hidden"
+          style={{ position:"relative", zIndex:4, background:"rgba(255,255,255,0.58)", backdropFilter:"blur(26px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 30px 80px rgba(124,58,237,0.12),0 2px 0 rgba(255,255,255,0.8) inset" }}>
           <div className="p-8 md:p-14">
             <div className="grid gap-8 md:grid-cols-3">
               {STATS.map((s,i)=>(
@@ -1353,10 +1246,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor:"none" }}>
-      {/* Layer order: aurora orbs (-z-10) → clouds (0) → particles (2) → cursor (9998/9999) → content (4) */}
+      {/* Layer order: aurora orbs (-z-10) → liquid waves (1) → cursor (9998/9999) → content (4) */}
       <AuroraOrbs/>
-      <CloudBackground/>
-      <ParticleSystem/>
+      <LiquidWaves/>
       <CustomCursor/>
 
       <div style={{ position:"relative", zIndex:4 }}>
@@ -1379,4 +1271,3 @@ export default function Home() {
     </div>
   );
 }
-
