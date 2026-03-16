@@ -72,78 +72,387 @@ const FAQS = [
   { q:"Does the AI sound like a real person?", a:"Yes. Our voice AI is trained to match your brand's tone and handles natural conversation including interruptions and follow-up questions." },
 ];
 
-// ─── qZ LOGO ──────────────────────────────────────────────────────────────────
+// ─── qZ LOGO 3D ───────────────────────────────────────────────────────────────
 function QZLogo({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * 0.7} viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="38" r="20" stroke="#111" strokeWidth="12" fill="none"/>
-      <line x1="52" y1="38" x2="52" y2="72" stroke="#111" strokeWidth="12" strokeLinecap="round"/>
-      <line x1="68" y1="16" x2="104" y2="16" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
-      <line x1="104" y1="16" x2="68" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
-      <line x1="68" y1="68" x2="104" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
-    </svg>
-  );
-}
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const w = size;
+  const h = Math.round(size * 0.7);
 
-// ─── MOUSE FOLLOWER CURSOR ────────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
+    ctx.scale(dpr, dpr);
+
+    let angle = 0;
+    let raf: number;
+
+    function project(x: number, y: number, z: number, fov: number, cx: number, cy: number) {
+      const scale = fov / (fov + z);
+      return { x: cx + x * scale, y: cy + y * scale, s: scale };
+    }
+
+    function drawExtrudedChar(
+      ctx: CanvasRenderingContext2D,
+      paths2D: Array<{ cmd: string; args: number[] }[]>,
+      rotY: number,
+      ox: number,
+      oy: number,
+      fov: number,
+      depth: number,
+      frontColor: string,
+      sideColor: string
+    ) {
+      const cosA = Math.cos(rotY);
+      const sinA = Math.sin(rotY);
+
+      function rot(x: number, z: number) {
+        return { rx: x * cosA - z * sinA, rz: x * sinA + z * cosA };
+      }
+
+      function proj(x: number, y: number, z: number) {
+        return project(x, y, z, fov, ox, oy);
+      }
+
+      // Draw sides first (back to front order)
+      ctx.fillStyle = sideColor;
+      for (const path of paths2D) {
+        for (let i = 0; i < path.length - 1; i++) {
+          const p0 = path[i];
+          const p1 = path[i + 1];
+          if (p0.cmd === "L" || p0.cmd === "M") {
+            const x0 = p0.args[0], y0 = p0.args[1];
+            const x1 = p1.cmd === "L" ? p1.args[0] : x0;
+            const y1 = p1.cmd === "L" ? p1.args[1] : y0;
+            const r0f = rot(x0, 0);
+            const r0b = rot(x0, -depth);
+            const r1f = rot(x1, 0);
+            const r1b = rot(x1, -depth);
+            const pf0 = proj(r0f.rx, y0, r0f.rz);
+            const pb0 = proj(r0b.rx, y0, r0b.rz);
+            const pf1 = proj(r1f.rx, y1, r1f.rz);
+            const pb1 = proj(r1b.rx, y1, r1b.rz);
+            // Only draw visible faces
+            const cross = (pf1.x - pf0.x) * (pb0.y - pf0.y) - (pf1.y - pf0.y) * (pb0.x - pf0.x);
+            if (cross > 0) {
+              ctx.beginPath();
+              ctx.moveTo(pf0.x, pf0.y);
+              ctx.lineTo(pf1.x, pf1.y);
+              ctx.lineTo(pb1.x, pb1.y);
+              ctx.lineTo(pb0.x, pb0.y);
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "rgba(0,0,0,0.15)";
+              ctx.lineWidth = 0.3;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Draw front face
+      for (const path of paths2D) {
+        ctx.beginPath();
+        let first = true;
+        for (const seg of path) {
+          if (seg.cmd === "M" || seg.cmd === "L") {
+            const r = rot(seg.args[0], 0);
+            const p = proj(r.rx, seg.args[1], r.rz);
+            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+            else ctx.lineTo(p.x, p.y);
+          }
+        }
+        ctx.closePath();
+        ctx.fillStyle = frontColor;
+        ctx.fill();
+      }
+    }
+
+    // Build letter paths as stroke outlines
+    // We'll draw thick strokes as filled rectangles to simulate 3D extrusion
+    function buildStrokePath(x1: number, y1: number, x2: number, y2: number, thick: number) {
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = (-dy / len) * thick / 2;
+      const ny = (dx / len) * thick / 2;
+      return [
+        { cmd: "M", args: [x1 + nx, y1 + ny] },
+        { cmd: "L", args: [x2 + nx, y2 + ny] },
+        { cmd: "L", args: [x2 - nx, y2 - ny] },
+        { cmd: "L", args: [x1 - nx, y1 - ny] },
+        { cmd: "M", args: [x1 + nx, y1 + ny] },
+      ];
+    }
+
+    function buildCirclePath(cx: number, cy: number, r: number, thick: number, steps = 32) {
+      const outer: Array<{ cmd: string; args: number[] }> = [];
+      const inner: Array<{ cmd: string; args: number[] }> = [];
+      for (let i = 0; i <= steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const c = Math.cos(a), s = Math.sin(a);
+        outer.push({ cmd: i === 0 ? "M" : "L", args: [cx + (r + thick / 2) * c, cy + (r + thick / 2) * s] });
+        inner.unshift({ cmd: "L", args: [cx + (r - thick / 2) * c, cy + (r - thick / 2) * s] });
+      }
+      return [...outer, ...inner, { cmd: "M", args: outer[0].args }];
+    }
+
+    // Scale factor to fit in canvas
+    const SC = w / 140;
+    const T = 6 * SC; // stroke thickness
+    const D = 8 * SC; // extrusion depth
+
+    // "q" letter: circle + tail
+    const qCircle = buildCirclePath(32 * SC, 38 * SC, 20 * SC, T * 1.2);
+    const qTail = buildStrokePath(52 * SC, 38 * SC, 52 * SC, 72 * SC, T * 1.2);
+
+    // "Z" letter: three strokes
+    const zTop    = buildStrokePath(68 * SC, 16 * SC, 104 * SC, 16 * SC, T);
+    const zDiag   = buildStrokePath(104 * SC, 16 * SC, 68 * SC, 68 * SC, T);
+    const zBottom = buildStrokePath(68 * SC, 68 * SC, 104 * SC, 68 * SC, T);
+
+    function render() {
+      ctx.clearRect(0, 0, w, h);
+      angle += 0.018;
+
+      const fov = 300;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Brightness based on angle for lighting effect
+      const light = 0.5 + 0.5 * Math.cos(angle);
+      const r = Math.round(100 + 55 * light);
+      const g = Math.round(20 + 20 * light);
+      const b = Math.round(180 + 60 * light);
+      const frontCol = `rgb(${r},${g},${b})`;
+      const sideCol = `rgba(${Math.round(r*0.5)},${Math.round(g*0.4)},${Math.round(b*0.7)},0.85)`;
+
+      // Offset q to the left and Z to the right
+      const qOffX = -cx * 0.45;
+      const zOffX = cx * 0.32;
+
+      drawExtrudedChar(ctx, [qCircle, qTail], angle, cx + qOffX, cy, fov, D, frontCol, sideCol);
+      drawExtrudedChar(ctx, [zTop, zDiag, zBottom], angle, cx + zOffX, cy, fov, D * 0.9,
+        `rgb(${Math.round(r*0.85)},${Math.round(g*0.7)},${b})`, sideCol);
+
+      raf = requestAnimationFrame(render);
+    }
+
+    render();
+    return () => cancelAnimationFrame(raf);
+  }, [w, h]);
+
+  return <canvas ref={canvasRef} style={{ display:"block" }}/>;
+}
+// ─── CURSOR GLOW ─────────────────────────────────────────────────────────────
 function CursorGlow() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 80, damping: 20 });
-  const springY = useSpring(mouseY, { stiffness: 80, damping: 20 });
-
+  const springX = useSpring(mouseX, { stiffness:60, damping:18 });
+  const springY = useSpring(mouseY, { stiffness:60, damping:18 });
   useEffect(() => {
     const move = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
   }, []);
-
   return (
-    <motion.div
-      style={{ x: springX, y: springY, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999, width:400, height:400, borderRadius:"50%",
-        background:"radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)", filter:"blur(0px)" }}
-    />
+    <motion.div style={{ x:springX, y:springY, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999,
+      width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle,rgba(124,58,237,0.06) 0%,transparent 70%)" }}/>
   );
 }
 
-// ─── FLOATING PARTICLES ───────────────────────────────────────────────────────
-function FloatingParticles() {
-  const particles = Array.from({ length: 18 }, (_, i) => ({
-    id: i,
-    x: `${8 + i * 5.2}%`,
-    y: `${10 + ((i * 23) % 75)}%`,
-    size: 2 + (i % 3),
-    dur: 6 + i * 1.1,
-    delay: i * 0.4,
-  }));
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex:1 }}>
-      {particles.map(p => (
-        <motion.div key={p.id}
-          style={{ position:"absolute", left:p.x, top:p.y, width:p.size, height:p.size, borderRadius:"50%", background:`rgba(124,58,237,${0.2 + (p.id%3)*0.12})` }}
-          animate={{ y:[0, -(30 + p.id*4), 0], opacity:[0, 0.7, 0] }}
-          transition={{ duration:p.dur, repeat:Infinity, delay:p.delay, ease:"easeInOut" }}
-        />
-      ))}
-    </div>
-  );
+// ─── PARTICLE NETWORK CANVAS ──────────────────────────────────────────────────
+function ParticleNetwork() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouse = useRef({ x: -9999, y: -9999 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    const NUM = Math.min(80, Math.floor((W * H) / 14000));
+    const MAX_DIST = 160;
+    const MOUSE_DIST = 200;
+
+    interface Particle {
+      x: number; y: number;
+      vx: number; vy: number;
+      r: number; alpha: number;
+      baseAlpha: number;
+    }
+
+    const particles: Particle[] = Array.from({ length: NUM }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: 1.5 + Math.random() * 2.5,
+      alpha: 0,
+      baseAlpha: 0.3 + Math.random() * 0.5,
+    }));
+
+    // Slowly fade in
+    let startTime = performance.now();
+    let raf: number;
+
+    function draw(now: number) {
+      const elapsed = (now - startTime) / 1000;
+      ctx.clearRect(0, 0, W, H);
+
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+
+      // Update + draw particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce off walls
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+
+        // Mouse repulsion
+        const dxm = p.x - mx;
+        const dym = p.y - my;
+        const dm = Math.sqrt(dxm * dxm + dym * dym);
+        if (dm < MOUSE_DIST) {
+          const force = (1 - dm / MOUSE_DIST) * 0.8;
+          p.vx += (dxm / dm) * force;
+          p.vy += (dym / dm) * force;
+          // Speed clamp
+          const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if (spd > 2.5) { p.vx = (p.vx / spd) * 2.5; p.vy = (p.vy / spd) * 2.5; }
+        }
+
+        // Slowly return to normal speed
+        p.vx *= 0.99;
+        p.vy *= 0.99;
+
+        const fadeIn = Math.min(1, elapsed * 0.5);
+        p.alpha = p.baseAlpha * fadeIn;
+
+        // Pulse
+        const pulse = 0.85 + 0.15 * Math.sin(now * 0.001 + p.x * 0.01);
+        const finalAlpha = p.alpha * pulse;
+
+        // Draw particle
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2.5);
+        grad.addColorStop(0, `rgba(167,110,255,${finalAlpha})`);
+        grad.addColorStop(1, `rgba(124,58,237,0)`);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Hard center dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(196,166,255,${finalAlpha * 1.2})`;
+        ctx.fill();
+      }
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAX_DIST) {
+            const strength = 1 - dist / MAX_DIST;
+            const fadeIn = Math.min(1, (performance.now() - startTime) / 2000);
+
+            // Gradient line
+            const lg = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+            lg.addColorStop(0, `rgba(167,110,255,${strength * 0.35 * fadeIn})`);
+            lg.addColorStop(0.5, `rgba(124,58,237,${strength * 0.5 * fadeIn})`);
+            lg.addColorStop(1, `rgba(167,110,255,${strength * 0.35 * fadeIn})`);
+
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = lg;
+            ctx.lineWidth = strength * 1.5;
+            ctx.stroke();
+          }
+        }
+
+        // Mouse connections
+        const p = particles[i];
+        const dxm = p.x - mx;
+        const dym = p.y - my;
+        const dm = Math.sqrt(dxm * dxm + dym * dym);
+        if (dm < MOUSE_DIST * 1.2) {
+          const str = 1 - dm / (MOUSE_DIST * 1.2);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mx, my);
+          ctx.strokeStyle = `rgba(196,166,255,${str * 0.6})`;
+          ctx.lineWidth = str * 2;
+          ctx.stroke();
+        }
+      }
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    raf = requestAnimationFrame(draw);
+
+    const onMove = (e: MouseEvent) => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
+    const onLeave = () => { mouse.current.x = -9999; mouse.current.y = -9999; };
+    const onResize = () => {
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W; canvas.height = H;
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseleave", onLeave);
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:2, pointerEvents:"none", width:"100%", height:"100%", mixBlendMode:"normal" }}/>;
 }
 
 // ─── BACKGROUND ───────────────────────────────────────────────────────────────
 function Background() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Soft gradient base */}
       <div style={{ position:"absolute", inset:0, background:"linear-gradient(160deg,#fdfbff 0%,#f3ecff 20%,#eaf0ff 45%,#fdeef6 70%,#fffbf0 100%)" }}/>
-      <motion.div animate={{ x:[0,30,-20,0], y:[0,-20,15,0], scale:[1,1.05,0.97,1] }} transition={{ duration:22, repeat:Infinity, ease:"easeInOut" }}
-        style={{ position:"absolute", top:"-15%", left:"55%", width:750, height:750, borderRadius:"50%", background:"radial-gradient(circle,rgba(167,110,255,0.2) 0%,transparent 70%)", filter:"blur(70px)" }}/>
-      <motion.div animate={{ x:[0,-25,20,0], y:[0,20,-15,0], scale:[1,0.96,1.04,1] }} transition={{ duration:27, repeat:Infinity, ease:"easeInOut", delay:3 }}
-        style={{ position:"absolute", top:"25%", left:"-12%", width:650, height:650, borderRadius:"50%", background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 70%)", filter:"blur(65px)" }}/>
-      <motion.div animate={{ x:[0,20,-30,0], y:[0,-15,25,0], scale:[1,1.08,0.95,1] }} transition={{ duration:20, repeat:Infinity, ease:"easeInOut", delay:6 }}
-        style={{ position:"absolute", bottom:"-15%", right:"5%", width:850, height:850, borderRadius:"50%", background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 70%)", filter:"blur(80px)" }}/>
-      {/* Grid */}
-      <div style={{ position:"absolute", inset:0, opacity:0.018, backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)", backgroundSize:"80px 80px" }}/>
-      {/* Noise */}
-      <div style={{ position:"absolute", inset:0, opacity:0.022, backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat:"repeat", backgroundSize:"128px 128px" }}/>
+      {/* Animated orbs */}
+      <motion.div animate={{ x:[0,40,-25,0], y:[0,-25,18,0], scale:[1,1.06,0.96,1] }} transition={{ duration:24, repeat:Infinity, ease:"easeInOut" }}
+        style={{ position:"absolute", top:"-15%", left:"55%", width:750, height:750, borderRadius:"50%",
+          background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 70%)", filter:"blur(70px)" }}/>
+      <motion.div animate={{ x:[0,-30,22,0], y:[0,22,-18,0], scale:[1,0.95,1.06,1] }} transition={{ duration:29, repeat:Infinity, ease:"easeInOut", delay:4 }}
+        style={{ position:"absolute", top:"25%", left:"-12%", width:650, height:650, borderRadius:"50%",
+          background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 70%)", filter:"blur(65px)" }}/>
+      <motion.div animate={{ x:[0,22,-35,0], y:[0,-18,28,0], scale:[1,1.09,0.94,1] }} transition={{ duration:22, repeat:Infinity, ease:"easeInOut", delay:8 }}
+        style={{ position:"absolute", bottom:"-15%", right:"5%", width:850, height:850, borderRadius:"50%",
+          background:"radial-gradient(circle,rgba(130,180,255,0.18) 0%,transparent 70%)", filter:"blur(80px)" }}/>
+      {/* Subtle grid */}
+      <div style={{ position:"absolute", inset:0, opacity:0.015,
+        backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)",
+        backgroundSize:"80px 80px" }}/>
     </div>
   );
 }
@@ -167,10 +476,13 @@ function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
           </motion.button>
           <div style={{ width:1, height:20, background:"rgba(0,0,0,0.09)", margin:"0 4px" }}/>
           {links.map(([label,page])=>(
-            <motion.button key={page} onClick={()=>goto(page)} style={{ ...SF, ...blurPill }}
+            <motion.button key={page} onClick={()=>goto(page)}
               whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${current===page?"text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-900"}`}
-              {...(current===page ? { style:{ ...SF, background:"rgba(255,255,255,0.9)", boxShadow:"0 2px 10px rgba(0,0,0,0.08)" }} : { style:{ ...SF, background:"transparent" }})}>
+              style={ current===page
+                ? { ...SF, ...blurPill, background:"rgba(255,255,255,0.9)", boxShadow:"0 2px 10px rgba(0,0,0,0.08)" }
+                : { ...SF, background:"transparent", border:"1px solid transparent" }
+              }
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${current===page?"text-gray-900":"text-gray-500 hover:text-gray-900"}`}>
               {label}
             </motion.button>
           ))}
@@ -400,7 +712,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
     <>
       {/* HERO */}
       <section ref={heroRef} className="relative pt-44 pb-28 px-6 overflow-hidden">
-        <motion.div style={{ y:heroY, opacity:heroO }} className="mx-auto max-w-5xl text-center">
+        <motion.div style={{ y:heroY, opacity:heroO, position:"relative", zIndex:2 }} className="mx-auto max-w-5xl text-center">
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, ease:E }}>
             <motion.span
               style={{ ...SF, color:"#7c3aed", background:"rgba(124,58,237,0.08)", border:"1px solid rgba(124,58,237,0.15)", backdropFilter:"blur(8px)" }}
@@ -1088,8 +1400,9 @@ export default function Home() {
   return (
     <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={SF}>
       <Background/>
-      <FloatingParticles/>
+      <ParticleNetwork/>
       <CursorGlow/>
+      <div style={{ position:"relative", zIndex:3 }}>
       <Nav current={page} goto={goto}/>
       <AnimatePresence mode="wait">
         <motion.main key={page}
@@ -1105,6 +1418,7 @@ export default function Home() {
         </motion.main>
       </AnimatePresence>
       <Footer goto={goto}/>
+      </div>
     </div>
   );
 }
