@@ -15,15 +15,12 @@ const E = [0.16, 1, 0.3, 1] as const;
 const SF = { fontFamily:"'Satoshi', sans-serif" };
 const IF = { fontFamily:"'Instrument Serif', serif" };
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
 const TICKER = ["AI Voice Receptionist","24/7 Availability","WhatsApp & SMS","CRM Integration","Follow-Up Sequences","No Missed Calls","Instant Response","AI-Powered Websites","n8n Workflows","Custom Automation","Real-Time Alerts"];
-
 const STATS = [
   { n:"78%",  l:"of customers buy from whoever responds first." },
   { n:"< 1m", l:"ideal response window for a fresh inbound lead." },
   { n:"3×",   l:"more revenue closed with automated follow-ups." },
 ];
-
 const SERVICES = [
   { n:"01", title:"AI Website",            desc:"High-conversion pages connected to AI — built to capture, qualify, and route leads around the clock.",       price:"$399/mo" },
   { n:"02", title:"AI Voice Receptionist", desc:"Every call answered 24/7. Qualifies leads, books appointments, routes urgent calls — in your brand's voice.", price:"$699/mo" },
@@ -32,7 +29,6 @@ const SERVICES = [
   { n:"05", title:"Lead Qualification",    desc:"AI detects intent, asks the right questions, and sends only the best leads to your team.",                    price:"Included" },
   { n:"06", title:"CRM Integration",       desc:"Plugs into GoHighLevel, HubSpot, Salesforce and more. Your data stays where it lives.",                       price:"Included" },
 ];
-
 const COMPARE = [
   ["Responds to leads","Instantly, 24/7","Hours or days"],
   ["Answers phone calls","Every single call","Missed when busy"],
@@ -41,14 +37,12 @@ const COMPARE = [
   ["Scales with you","Unlimited capacity","Hire more staff"],
   ["Lock-in contract","None — cancel anytime","Varies"],
 ];
-
 const PLANS = [
-  { n:"01", title:"AI Website System",           price:"$399",   setup:"$250",   desc:"High-conversion website, lead capture, AI integrations, mobile optimization, and analytics.",                                             features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","AI integrations","Analytics & tracking"],                                                                                                      hot:false, custom:false },
-  { n:"02", title:"AI Voice & Chat Receptionist", price:"$699",   setup:"$350",   desc:"24/7 AI phone receptionist, WhatsApp & SMS automation, lead qualification, CRM integration, and reporting.",                              features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"],                                                                                                        hot:true,  custom:false },
-  { n:"03", title:"Full AI Automation System",    price:"$1,299", setup:"$500",   desc:"Website + AI receptionist + automated follow-ups — the complete system.",                                                                  features:["Everything in AI Website System","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"],                                                                                      hot:false, custom:false },
-  { n:"04", title:"Custom / n8n",                 price:"Custom", setup:"Custom", desc:"Bespoke workflow automation built on n8n — engineered around your exact process.",                                                         features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true  },
+  { n:"01", title:"AI Website System",           price:"$399",   setup:"$250",   desc:"High-conversion website, lead capture, AI integrations, mobile optimization, and analytics.", features:["Custom AI-connected landing page","Lead capture form","Mobile-first design","AI integrations","Analytics & tracking"], hot:false, custom:false },
+  { n:"02", title:"AI Voice & Chat Receptionist", price:"$699",   setup:"$350",   desc:"24/7 AI phone receptionist, WhatsApp & SMS automation, lead qualification, CRM integration, and reporting.", features:["AI phone receptionist (24/7)","WhatsApp & SMS automation","Lead qualification","CRM integration","Weekly report"], hot:true, custom:false },
+  { n:"03", title:"Full AI Automation System",    price:"$1,299", setup:"$500",   desc:"Website + AI receptionist + automated follow-ups — the complete system.", features:["Everything in AI Website System","Everything in AI Voice & Chat","Follow-up sequences","Lead tracking dashboard","Priority support"], hot:false, custom:false },
+  { n:"04", title:"Custom / n8n",                 price:"Custom", setup:"Custom", desc:"Bespoke workflow automation built on n8n — engineered around your exact process.", features:["Full n8n workflow architecture","API & webhook integrations","Multi-system orchestration","Custom logic & conditional flows","Data transformation & routing","Dedicated build sprint","Ongoing maintenance option"], hot:false, custom:true },
 ];
-
 const N8N_FEATURES = [
   { title:"Workflow Architecture", desc:"We design end-to-end automation graphs tailored to your exact business logic — not templates, not shortcuts." },
   { title:"API Orchestration",     desc:"Connect any tool, any API, any database. If it has a webhook or endpoint, we can wire it in." },
@@ -57,13 +51,11 @@ const N8N_FEATURES = [
   { title:"Multi-System Sync",     desc:"CRM, ERP, billing, email, Slack, spreadsheets — all talking to each other automatically." },
   { title:"Monitoring & Alerting", desc:"Real-time visibility into every run. Alerts when something breaks. Logs for everything." },
 ];
-
 const STEPS = [
   { n:"01", title:"We onboard your business",  desc:"We learn your brand, your workflow, your CRM. One call is all it takes." },
   { n:"02", title:"We build and configure",    desc:"AI voice, chat, follow-ups — all configured to your exact process and tone." },
   { n:"03", title:"You go live in 48 hours",   desc:"Every call answered. Every lead followed up. You focus on closing." },
 ];
-
 const FAQS = [
   { q:"How fast can I go live?",               a:"Most clients are fully live within 48 hours of onboarding. The Custom plan may take longer depending on workflow complexity." },
   { q:"Is there a long-term commitment?",      a:"No. All plans are month-to-month. Cancel at any time with no penalty." },
@@ -72,432 +64,92 @@ const FAQS = [
   { q:"Does the AI sound like a real person?", a:"Yes. Our voice AI is trained to match your brand's tone and handles natural conversation including interruptions and follow-up questions." },
 ];
 
-// ─── qZ LOGO 3D ───────────────────────────────────────────────────────────────
 function QZLogo({ size = 36 }: { size?: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const w = size;
-  const h = Math.round(size * 0.7);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
-    ctx.scale(dpr, dpr);
-
-    let angle = 0;
-    let raf: number;
-
-    function project(x: number, y: number, z: number, fov: number, cx: number, cy: number) {
-      const scale = fov / (fov + z);
-      return { x: cx + x * scale, y: cy + y * scale, s: scale };
-    }
-
-    function drawExtrudedChar(
-      ctx: CanvasRenderingContext2D,
-      paths2D: Array<{ cmd: string; args: number[] }[]>,
-      rotY: number,
-      ox: number,
-      oy: number,
-      fov: number,
-      depth: number,
-      frontColor: string,
-      sideColor: string
-    ) {
-      const cosA = Math.cos(rotY);
-      const sinA = Math.sin(rotY);
-
-      function rot(x: number, z: number) {
-        return { rx: x * cosA - z * sinA, rz: x * sinA + z * cosA };
-      }
-
-      function proj(x: number, y: number, z: number) {
-        return project(x, y, z, fov, ox, oy);
-      }
-
-      // Draw sides first (back to front order)
-      ctx.fillStyle = sideColor;
-      for (const path of paths2D) {
-        for (let i = 0; i < path.length - 1; i++) {
-          const p0 = path[i];
-          const p1 = path[i + 1];
-          if (p0.cmd === "L" || p0.cmd === "M") {
-            const x0 = p0.args[0], y0 = p0.args[1];
-            const x1 = p1.cmd === "L" ? p1.args[0] : x0;
-            const y1 = p1.cmd === "L" ? p1.args[1] : y0;
-            const r0f = rot(x0, 0);
-            const r0b = rot(x0, -depth);
-            const r1f = rot(x1, 0);
-            const r1b = rot(x1, -depth);
-            const pf0 = proj(r0f.rx, y0, r0f.rz);
-            const pb0 = proj(r0b.rx, y0, r0b.rz);
-            const pf1 = proj(r1f.rx, y1, r1f.rz);
-            const pb1 = proj(r1b.rx, y1, r1b.rz);
-            // Only draw visible faces
-            const cross = (pf1.x - pf0.x) * (pb0.y - pf0.y) - (pf1.y - pf0.y) * (pb0.x - pf0.x);
-            if (cross > 0) {
-              ctx.beginPath();
-              ctx.moveTo(pf0.x, pf0.y);
-              ctx.lineTo(pf1.x, pf1.y);
-              ctx.lineTo(pb1.x, pb1.y);
-              ctx.lineTo(pb0.x, pb0.y);
-              ctx.closePath();
-              ctx.fill();
-              ctx.strokeStyle = "rgba(0,0,0,0.15)";
-              ctx.lineWidth = 0.3;
-              ctx.stroke();
-            }
-          }
-        }
-      }
-
-      // Draw front face
-      for (const path of paths2D) {
-        ctx.beginPath();
-        let first = true;
-        for (const seg of path) {
-          if (seg.cmd === "M" || seg.cmd === "L") {
-            const r = rot(seg.args[0], 0);
-            const p = proj(r.rx, seg.args[1], r.rz);
-            if (first) { ctx.moveTo(p.x, p.y); first = false; }
-            else ctx.lineTo(p.x, p.y);
-          }
-        }
-        ctx.closePath();
-        ctx.fillStyle = frontColor;
-        ctx.fill();
-      }
-    }
-
-    // Build letter paths as stroke outlines
-    // We'll draw thick strokes as filled rectangles to simulate 3D extrusion
-    function buildStrokePath(x1: number, y1: number, x2: number, y2: number, thick: number) {
-      const dx = x2 - x1, dy = y2 - y1;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      const nx = (-dy / len) * thick / 2;
-      const ny = (dx / len) * thick / 2;
-      return [
-        { cmd: "M", args: [x1 + nx, y1 + ny] },
-        { cmd: "L", args: [x2 + nx, y2 + ny] },
-        { cmd: "L", args: [x2 - nx, y2 - ny] },
-        { cmd: "L", args: [x1 - nx, y1 - ny] },
-        { cmd: "M", args: [x1 + nx, y1 + ny] },
-      ];
-    }
-
-    function buildCirclePath(cx: number, cy: number, r: number, thick: number, steps = 32) {
-      const outer: Array<{ cmd: string; args: number[] }> = [];
-      const inner: Array<{ cmd: string; args: number[] }> = [];
-      for (let i = 0; i <= steps; i++) {
-        const a = (i / steps) * Math.PI * 2;
-        const c = Math.cos(a), s = Math.sin(a);
-        outer.push({ cmd: i === 0 ? "M" : "L", args: [cx + (r + thick / 2) * c, cy + (r + thick / 2) * s] });
-        inner.unshift({ cmd: "L", args: [cx + (r - thick / 2) * c, cy + (r - thick / 2) * s] });
-      }
-      return [...outer, ...inner, { cmd: "M", args: outer[0].args }];
-    }
-
-    // Scale factor to fit in canvas
-    const SC = w / 140;
-    const T = 6 * SC; // stroke thickness
-    const D = 8 * SC; // extrusion depth
-
-    // "q" letter: circle + tail
-    const qCircle = buildCirclePath(32 * SC, 38 * SC, 20 * SC, T * 1.2);
-    const qTail = buildStrokePath(52 * SC, 38 * SC, 52 * SC, 72 * SC, T * 1.2);
-
-    // "Z" letter: three strokes
-    const zTop    = buildStrokePath(68 * SC, 16 * SC, 104 * SC, 16 * SC, T);
-    const zDiag   = buildStrokePath(104 * SC, 16 * SC, 68 * SC, 68 * SC, T);
-    const zBottom = buildStrokePath(68 * SC, 68 * SC, 104 * SC, 68 * SC, T);
-
-    function render() {
-      ctx.clearRect(0, 0, w, h);
-      angle += 0.018;
-
-      const fov = 300;
-      const cx = w / 2;
-      const cy = h / 2;
-
-      // Brightness based on angle for lighting effect
-      const light = 0.5 + 0.5 * Math.cos(angle);
-      const r = Math.round(100 + 55 * light);
-      const g = Math.round(20 + 20 * light);
-      const b = Math.round(180 + 60 * light);
-      const frontCol = `rgb(${r},${g},${b})`;
-      const sideCol = `rgba(${Math.round(r*0.5)},${Math.round(g*0.4)},${Math.round(b*0.7)},0.85)`;
-
-      // Offset q to the left and Z to the right
-      const qOffX = -cx * 0.45;
-      const zOffX = cx * 0.32;
-
-      drawExtrudedChar(ctx, [qCircle, qTail], angle, cx + qOffX, cy, fov, D, frontCol, sideCol);
-      drawExtrudedChar(ctx, [zTop, zDiag, zBottom], angle, cx + zOffX, cy, fov, D * 0.9,
-        `rgb(${Math.round(r*0.85)},${Math.round(g*0.7)},${b})`, sideCol);
-
-      raf = requestAnimationFrame(render);
-    }
-
-    render();
-    return () => cancelAnimationFrame(raf);
-  }, [w, h]);
-
-  return <canvas ref={canvasRef} style={{ display:"block" }}/>;
+  return (
+    <svg width={size} height={Math.round(size*0.7)} viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="38" r="20" stroke="#111" strokeWidth="12" fill="none"/>
+      <line x1="52" y1="38" x2="52" y2="72" stroke="#111" strokeWidth="12" strokeLinecap="round"/>
+      <line x1="68" y1="16" x2="104" y2="16" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+      <line x1="104" y1="16" x2="68" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+      <line x1="68" y1="68" x2="104" y2="68" stroke="#111" strokeWidth="10" strokeLinecap="round"/>
+    </svg>
+  );
 }
-// ─── CURSOR GLOW ─────────────────────────────────────────────────────────────
+
 function CursorGlow() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness:60, damping:18 });
-  const springY = useSpring(mouseY, { stiffness:60, damping:18 });
+  const springX = useSpring(mouseX, { stiffness:80, damping:20 });
+  const springY = useSpring(mouseY, { stiffness:80, damping:20 });
   useEffect(() => {
     const move = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
-  }, []);
+  }, [mouseX, mouseY]);
   return (
-    <motion.div style={{ x:springX, y:springY, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999,
-      width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle,rgba(124,58,237,0.06) 0%,transparent 70%)" }}/>
+    <motion.div style={{ x:springX, y:springY, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999, width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle,rgba(124,58,237,0.07) 0%,transparent 70%)" }}/>
   );
 }
 
-// ─── PARTICLE NETWORK CANVAS ──────────────────────────────────────────────────
-function ParticleNetwork() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouse = useRef({ x: -9999, y: -9999 });
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let W = window.innerWidth;
-    let H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
-
-    const NUM = Math.min(80, Math.floor((W * H) / 14000));
-    const MAX_DIST = 160;
-    const MOUSE_DIST = 200;
-
-    interface Particle {
-      x: number; y: number;
-      vx: number; vy: number;
-      r: number; alpha: number;
-      baseAlpha: number;
-    }
-
-    const particles: Particle[] = Array.from({ length: NUM }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      r: 1.5 + Math.random() * 2.5,
-      alpha: 0,
-      baseAlpha: 0.3 + Math.random() * 0.5,
-    }));
-
-    // Slowly fade in
-    let startTime = performance.now();
-    let raf: number;
-
-    function draw(now: number) {
-      const elapsed = (now - startTime) / 1000;
-      ctx.clearRect(0, 0, W, H);
-
-      const mx = mouse.current.x;
-      const my = mouse.current.y;
-
-      // Update + draw particles
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Bounce off walls
-        if (p.x < 0 || p.x > W) p.vx *= -1;
-        if (p.y < 0 || p.y > H) p.vy *= -1;
-
-        // Mouse repulsion
-        const dxm = p.x - mx;
-        const dym = p.y - my;
-        const dm = Math.sqrt(dxm * dxm + dym * dym);
-        if (dm < MOUSE_DIST) {
-          const force = (1 - dm / MOUSE_DIST) * 0.8;
-          p.vx += (dxm / dm) * force;
-          p.vy += (dym / dm) * force;
-          // Speed clamp
-          const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-          if (spd > 2.5) { p.vx = (p.vx / spd) * 2.5; p.vy = (p.vy / spd) * 2.5; }
-        }
-
-        // Slowly return to normal speed
-        p.vx *= 0.99;
-        p.vy *= 0.99;
-
-        const fadeIn = Math.min(1, elapsed * 0.5);
-        p.alpha = p.baseAlpha * fadeIn;
-
-        // Pulse
-        const pulse = 0.85 + 0.15 * Math.sin(now * 0.001 + p.x * 0.01);
-        const finalAlpha = p.alpha * pulse;
-
-        // Draw particle
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2.5);
-        grad.addColorStop(0, `rgba(167,110,255,${finalAlpha})`);
-        grad.addColorStop(1, `rgba(124,58,237,0)`);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // Hard center dot
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(196,166,255,${finalAlpha * 1.2})`;
-        ctx.fill();
-      }
-
-      // Draw connections
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MAX_DIST) {
-            const strength = 1 - dist / MAX_DIST;
-            const fadeIn = Math.min(1, (performance.now() - startTime) / 2000);
-
-            // Gradient line
-            const lg = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-            lg.addColorStop(0, `rgba(167,110,255,${strength * 0.35 * fadeIn})`);
-            lg.addColorStop(0.5, `rgba(124,58,237,${strength * 0.5 * fadeIn})`);
-            lg.addColorStop(1, `rgba(167,110,255,${strength * 0.35 * fadeIn})`);
-
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = lg;
-            ctx.lineWidth = strength * 1.5;
-            ctx.stroke();
-          }
-        }
-
-        // Mouse connections
-        const p = particles[i];
-        const dxm = p.x - mx;
-        const dym = p.y - my;
-        const dm = Math.sqrt(dxm * dxm + dym * dym);
-        if (dm < MOUSE_DIST * 1.2) {
-          const str = 1 - dm / (MOUSE_DIST * 1.2);
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mx, my);
-          ctx.strokeStyle = `rgba(196,166,255,${str * 0.6})`;
-          ctx.lineWidth = str * 2;
-          ctx.stroke();
-        }
-      }
-
-      raf = requestAnimationFrame(draw);
-    }
-
-    raf = requestAnimationFrame(draw);
-
-    const onMove = (e: MouseEvent) => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
-    const onLeave = () => { mouse.current.x = -9999; mouse.current.y = -9999; };
-    const onResize = () => {
-      W = window.innerWidth; H = window.innerHeight;
-      canvas.width = W; canvas.height = H;
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseleave", onLeave);
-    window.addEventListener("resize", onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("resize", onResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:2, pointerEvents:"none", width:"100%", height:"100%", mixBlendMode:"normal" }}/>;
-}
-
-// ─── BACKGROUND ───────────────────────────────────────────────────────────────
-function Background() {
+function FloatingParticles() {
+  const particles = Array.from({ length:16 }, (_,i) => ({ id:i, x:`${8+i*5.8}%`, y:`${10+((i*23)%74)}%`, size:1.5+(i%3)*0.8, dur:6+i*1.2, delay:i*0.45 }));
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Soft gradient base */}
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(160deg,#fdfbff 0%,#f3ecff 20%,#eaf0ff 45%,#fdeef6 70%,#fffbf0 100%)" }}/>
-      {/* Animated orbs */}
-      <motion.div animate={{ x:[0,40,-25,0], y:[0,-25,18,0], scale:[1,1.06,0.96,1] }} transition={{ duration:24, repeat:Infinity, ease:"easeInOut" }}
-        style={{ position:"absolute", top:"-15%", left:"55%", width:750, height:750, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 70%)", filter:"blur(70px)" }}/>
-      <motion.div animate={{ x:[0,-30,22,0], y:[0,22,-18,0], scale:[1,0.95,1.06,1] }} transition={{ duration:29, repeat:Infinity, ease:"easeInOut", delay:4 }}
-        style={{ position:"absolute", top:"25%", left:"-12%", width:650, height:650, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 70%)", filter:"blur(65px)" }}/>
-      <motion.div animate={{ x:[0,22,-35,0], y:[0,-18,28,0], scale:[1,1.09,0.94,1] }} transition={{ duration:22, repeat:Infinity, ease:"easeInOut", delay:8 }}
-        style={{ position:"absolute", bottom:"-15%", right:"5%", width:850, height:850, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(130,180,255,0.18) 0%,transparent 70%)", filter:"blur(80px)" }}/>
-      {/* Subtle grid */}
-      <div style={{ position:"absolute", inset:0, opacity:0.015,
-        backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)",
-        backgroundSize:"80px 80px" }}/>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex:1 }}>
+      {particles.map(p=>(
+        <motion.div key={p.id} style={{ position:"absolute", left:p.x, top:p.y, width:p.size, height:p.size, borderRadius:"50%", background:`rgba(124,58,237,${0.18+(p.id%3)*0.1})` }}
+          animate={{ y:[0,-(28+p.id*3.5),0], opacity:[0,0.7,0] }}
+          transition={{ duration:p.dur, repeat:Infinity, delay:p.delay, ease:"easeInOut" }}/>
+      ))}
     </div>
   );
 }
 
-// ─── NAV ──────────────────────────────────────────────────────────────────────
+function Background() {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(160deg,#fdfbff 0%,#f3ecff 20%,#eaf0ff 45%,#fdeef6 70%,#fffbf0 100%)" }}/>
+      <motion.div animate={{ x:[0,40,-25,0], y:[0,-25,18,0], scale:[1,1.06,0.96,1] }} transition={{ duration:24, repeat:Infinity, ease:"easeInOut" }}
+        style={{ position:"absolute", top:"-15%", left:"55%", width:750, height:750, borderRadius:"50%", background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 70%)", filter:"blur(70px)" }}/>
+      <motion.div animate={{ x:[0,-30,22,0], y:[0,22,-18,0], scale:[1,0.95,1.06,1] }} transition={{ duration:29, repeat:Infinity, ease:"easeInOut", delay:4 }}
+        style={{ position:"absolute", top:"25%", left:"-12%", width:650, height:650, borderRadius:"50%", background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 70%)", filter:"blur(65px)" }}/>
+      <motion.div animate={{ x:[0,22,-35,0], y:[0,-18,28,0], scale:[1,1.09,0.94,1] }} transition={{ duration:22, repeat:Infinity, ease:"easeInOut", delay:8 }}
+        style={{ position:"absolute", bottom:"-15%", right:"5%", width:850, height:850, borderRadius:"50%", background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 70%)", filter:"blur(80px)" }}/>
+      <div style={{ position:"absolute", inset:0, opacity:0.018, backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)", backgroundSize:"80px 80px" }}/>
+      <div style={{ position:"absolute", inset:0, opacity:0.022, backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat:"repeat", backgroundSize:"128px 128px" }}/>
+    </div>
+  );
+}
+
 function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
   const [open, setOpen] = useState(false);
   const links: [string,Page][] = [["Services","services"],["Pricing","pricing"],["About","about"],["Contact","contact"]];
-  const blurPill = { background:"rgba(255,255,255,0.55)", backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.85)" };
-
+  const blurPill: React.CSSProperties = { background:"rgba(255,255,255,0.6)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)" };
   return (
     <>
-      <motion.div initial={{ opacity:0, y:-24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.9, ease:E }}
-        className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-max">
-        {/* Desktop pill */}
-        <nav className="hidden md:flex items-center gap-1 px-2 py-2 rounded-full"
-          style={{ ...blurPill, boxShadow:"0 8px 40px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.95) inset" }}>
-          <motion.button onClick={()=>goto("home")} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
-            className="flex items-center px-2 py-1.5 rounded-full" style={{ background:"rgba(255,255,255,0.5)" }}>
+      <motion.div initial={{ opacity:0, y:-24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.9, ease:E }} className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-max">
+        <nav className="hidden md:flex items-center gap-1 px-2 py-2 rounded-full" style={{ ...blurPill, boxShadow:"0 8px 40px rgba(0,0,0,0.07),0 1px 0 rgba(255,255,255,0.95) inset" }}>
+          <motion.button onClick={()=>goto("home")} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }} className="flex items-center px-2 py-1.5 rounded-full" style={{ background:"rgba(255,255,255,0.5)" }}>
             <QZLogo size={34}/>
           </motion.button>
           <div style={{ width:1, height:20, background:"rgba(0,0,0,0.09)", margin:"0 4px" }}/>
           {links.map(([label,page])=>(
-            <motion.button key={page} onClick={()=>goto(page)}
-              whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
+            <motion.button key={page} onClick={()=>goto(page)} whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
               style={ current===page
-                ? { ...SF, ...blurPill, background:"rgba(255,255,255,0.9)", boxShadow:"0 2px 10px rgba(0,0,0,0.08)" }
-                : { ...SF, background:"transparent", border:"1px solid transparent" }
+                ? { ...SF, background:"rgba(255,255,255,0.9)", boxShadow:"0 2px 10px rgba(0,0,0,0.08)", borderRadius:"9999px", padding:"8px 16px", border:"1px solid rgba(255,255,255,0.9)" }
+                : { ...SF, background:"transparent", borderRadius:"9999px", padding:"8px 16px", border:"1px solid transparent" }
               }
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${current===page?"text-gray-900":"text-gray-500 hover:text-gray-900"}`}>
+              className={`text-sm font-medium transition-all ${current===page?"text-gray-900":"text-gray-500 hover:text-gray-900"}`}>
               {label}
             </motion.button>
           ))}
           <div style={{ width:1, height:20, background:"rgba(0,0,0,0.09)", margin:"0 4px" }}/>
-          <motion.button onClick={()=>{ trackLead(); goto("contact"); }}
-            whileHover={{ scale:1.06, boxShadow:"0 6px 24px rgba(0,0,0,0.3)" }} whileTap={{ scale:0.96 }}
-            style={{ ...SF, background:"linear-gradient(135deg,#111 0%,#2d2d2d 100%)", boxShadow:"0 3px 14px rgba(0,0,0,0.22)" }}
-            className="px-5 py-2.5 rounded-full text-sm font-semibold text-white">
+          <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.06 }} whileTap={{ scale:0.96 }}
+            style={{ ...SF, background:"linear-gradient(135deg,#111,#2d2d2d)", boxShadow:"0 3px 14px rgba(0,0,0,0.22)", borderRadius:"9999px", padding:"10px 20px", border:"none" }}
+            className="text-sm font-semibold text-white">
             Get started
           </motion.button>
         </nav>
-
-        {/* Mobile pill */}
-        <nav className="flex md:hidden items-center gap-3 px-4 py-2.5 rounded-full"
-          style={{ ...blurPill, boxShadow:"0 6px 28px rgba(0,0,0,0.08)" }}>
+        <nav className="flex md:hidden items-center gap-3 px-4 py-2.5 rounded-full" style={{ ...blurPill, boxShadow:"0 6px 28px rgba(0,0,0,0.08)" }}>
           <button onClick={()=>goto("home")}><QZLogo size={28}/></button>
           <div className="flex-1"/>
           <button onClick={()=>setOpen(!open)} className="flex flex-col gap-1.5 p-1">
@@ -507,22 +159,20 @@ function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
           </button>
         </nav>
       </motion.div>
-
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity:0, y:-12, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, y:-12, scale:0.95 }}
-            transition={{ duration:0.22, ease:E }}
+          <motion.div initial={{ opacity:0, y:-12, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, y:-12, scale:0.95 }} transition={{ duration:0.22, ease:E }}
             className="fixed top-20 left-1/2 -translate-x-1/2 z-40 w-[min(320px,90vw)] rounded-3xl md:hidden"
             style={{ background:"rgba(255,255,255,0.9)", backdropFilter:"blur(28px)", border:"1px solid rgba(255,255,255,0.95)", boxShadow:"0 24px 64px rgba(0,0,0,0.1)" }}>
             <div className="p-3 flex flex-col gap-1">
               {links.map(([label,page])=>(
-                <motion.button key={page} onClick={()=>{ goto(page); setOpen(false); }} style={SF}
-                  whileHover={{ x:5 }} className="text-left px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-white hover:text-gray-900 transition-colors">{label}</motion.button>
+                <motion.button key={page} onClick={()=>{ goto(page); setOpen(false); }} style={SF} whileHover={{ x:5 }}
+                  className="text-left px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-white hover:text-gray-900 transition-colors">{label}</motion.button>
               ))}
               <div className="my-1.5 h-px" style={{ background:"rgba(0,0,0,0.06)" }}/>
-              <motion.button onClick={()=>{ trackLead(); goto("contact"); setOpen(false); }}
-                whileTap={{ scale:0.97 }} style={{ ...SF, background:"linear-gradient(135deg,#111,#333)" }}
-                className="px-4 py-3 rounded-2xl text-sm font-semibold text-white text-center">Get started</motion.button>
+              <motion.button onClick={()=>{ trackLead(); goto("contact"); setOpen(false); }} whileTap={{ scale:0.97 }}
+                style={{ ...SF, background:"linear-gradient(135deg,#111,#333)", borderRadius:"16px", border:"none", padding:"12px 16px" }}
+                className="text-sm font-semibold text-white text-center">Get started</motion.button>
             </div>
           </motion.div>
         )}
@@ -531,7 +181,6 @@ function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
   );
 }
 
-// ─── FOOTER ───────────────────────────────────────────────────────────────────
 function Footer({ goto }: { goto:(p:Page)=>void }) {
   return (
     <footer style={{ borderTop:"1px solid rgba(0,0,0,0.07)", background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)" }}>
@@ -540,7 +189,6 @@ function Footer({ goto }: { goto:(p:Page)=>void }) {
           <div>
             <div className="mb-5"><QZLogo size={44}/></div>
             <p style={SF} className="text-sm text-gray-500 leading-relaxed max-w-xs mb-6">AI automation systems that respond, follow up, and convert — without you lifting a finger.</p>
-            {/* Social */}
             <div className="flex flex-wrap gap-2 mb-6">
               <motion.a href="https://www.instagram.com/quazier.ai" target="_blank" rel="noopener noreferrer"
                 whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
@@ -591,14 +239,12 @@ function Footer({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ─── CHAT DEMO ────────────────────────────────────────────────────────────────
 function ChatDemo() {
   const INIT: Msg = { role:"ai", text:"Hi! I'm the quazieR AI. What kind of business do you run?" };
   const [msgs, setMsgs] = useState<Msg[]>([INIT]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const send = async () => {
     const text = input.trim();
     if (!text || typing) return;
@@ -611,11 +257,9 @@ function ChatDemo() {
       const res = await fetch("/api/chat", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ messages:updated.map(m=>({ role:m.role==="ai"?"assistant":"user", content:m.text })) }) });
       const data = await res.json();
       setMsgs(m=>[...m,{ role:"ai", text:data.reply||"Sorry, something went wrong." }]);
-    } catch {
-      setMsgs(m=>[...m,{ role:"ai", text:"Sorry, I couldn't connect. Please try again." }]);
-    } finally { setTyping(false); }
+    } catch { setMsgs(m=>[...m,{ role:"ai", text:"Sorry, I couldn't connect. Please try again." }]); }
+    finally { setTyping(false); }
   };
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }}>
@@ -630,12 +274,9 @@ function ChatDemo() {
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
         <AnimatePresence>
           {msgs.map((m,i)=>(
-            <motion.div key={i} initial={{ opacity:0, y:10, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.3, ease:E }}
-              className={`flex ${m.role==="user"?"justify-end":"justify-start"}`}>
+            <motion.div key={i} initial={{ opacity:0, y:10, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.3 }} className={`flex ${m.role==="user"?"justify-end":"justify-start"}`}>
               <div style={{ ...SF, ...(m.role==="user" ? { background:"linear-gradient(135deg,#7c3aed,#a855f7)" } : { background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.06)" }) }}
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role==="user"?"rounded-br-sm text-white":"rounded-bl-sm text-gray-700"}`}>
-                {m.text}
-              </div>
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role==="user"?"rounded-br-sm text-white":"rounded-bl-sm text-gray-700"}`}>{m.text}</div>
             </motion.div>
           ))}
           {typing && (
@@ -649,28 +290,22 @@ function ChatDemo() {
         <div ref={bottomRef}/>
       </div>
       <div className="p-4 flex gap-2" style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
-        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }}}
-          placeholder="Type a message..." disabled={typing}
-          style={{ ...SF, background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)" }}
-          className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition disabled:opacity-50"/>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }}} placeholder="Type a message..." disabled={typing}
+          style={{ ...SF, background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)" }} className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition disabled:opacity-50"/>
         <motion.button onClick={send} disabled={typing||!input.trim()} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
-          style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40">Send</motion.button>
+          style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40">Send</motion.button>
       </div>
     </div>
   );
 }
 
-// ─── FAQ ITEM ─────────────────────────────────────────────────────────────────
 function FAQItem({ q, a }: { q:string; a:string }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div className="py-5" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }} initial={false}>
-      <motion.button onClick={()=>setOpen(!open)} className="flex w-full items-center justify-between gap-4 text-left"
-        whileHover={{ x:2 }}>
+    <motion.div className="py-5" style={{ borderBottom:"1px solid rgba(0,0,0,0.06)" }}>
+      <motion.button onClick={()=>setOpen(!open)} whileHover={{ x:2 }} className="flex w-full items-center justify-between gap-4 text-left">
         <span style={{ ...IF, fontStyle:"italic" }} className="text-lg text-gray-800">{q}</span>
-        <motion.span animate={{ rotate:open?45:0, color:open?"#7c3aed":"#9ca3af" }} transition={{ duration:0.2 }}
-          className="flex-shrink-0 text-2xl font-light">+</motion.span>
+        <motion.span animate={{ rotate:open?45:0 }} style={{ color:"#7c3aed" }} className="flex-shrink-0 text-2xl font-light">+</motion.span>
       </motion.button>
       <AnimatePresence>
         {open && (
@@ -683,90 +318,67 @@ function FAQItem({ q, a }: { q:string; a:string }) {
   );
 }
 
-// ─── BLUR BUTTON ─────────────────────────────────────────────────────────────
 function BlurBtn({ children, onClick, dark }: { children:React.ReactNode; onClick?:()=>void; dark?:boolean }) {
   return (
-    <motion.button onClick={onClick}
-      whileHover={{ scale:1.05, y:-3, boxShadow: dark ? "0 12px 40px rgba(0,0,0,0.3)" : "0 12px 40px rgba(124,58,237,0.12)" }}
-      whileTap={{ scale:0.97 }}
+    <motion.button onClick={onClick} whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
       style={ dark
-        ? { ...SF, background:"linear-gradient(135deg,#111,#2d2d2d)", boxShadow:"0 4px 20px rgba(0,0,0,0.22)" }
-        : { ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 4px 20px rgba(0,0,0,0.07)" }
+        ? { ...SF, background:"linear-gradient(135deg,#111,#2d2d2d)", boxShadow:"0 4px 20px rgba(0,0,0,0.22)", borderRadius:"9999px", border:"none", padding:"14px 32px" }
+        : { ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 4px 20px rgba(0,0,0,0.07)", borderRadius:"9999px", padding:"14px 32px" }
       }
-      className={`px-8 py-4 rounded-full text-sm font-semibold transition-all ${dark ? "text-white" : "text-gray-700"}`}>
+      className={`text-sm font-semibold transition-all ${dark ? "text-white" : "text-gray-700"}`}>
       {children}
     </motion.button>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HOME
-// ═══════════════════════════════════════════════════════════════════════════════
 function HomePage({ goto }: { goto:(p:Page)=>void }) {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target:heroRef, offset:["start start","end start"] });
   const heroY = useTransform(scrollYProgress, [0,1], ["0%","18%"]);
   const heroO = useTransform(scrollYProgress, [0,0.8], [1,0]);
-
   return (
     <>
-      {/* HERO */}
       <section ref={heroRef} className="relative pt-44 pb-28 px-6 overflow-hidden">
         <motion.div style={{ y:heroY, opacity:heroO, position:"relative", zIndex:2 }} className="mx-auto max-w-5xl text-center">
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, ease:E }}>
-            <motion.span
+            <motion.span whileHover={{ scale:1.04 }}
               style={{ ...SF, color:"#7c3aed", background:"rgba(124,58,237,0.08)", border:"1px solid rgba(124,58,237,0.15)", backdropFilter:"blur(8px)" }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-8"
-              whileHover={{ scale:1.04 }}>
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-8">
               ✦ AI Automation Studio
             </motion.span>
           </motion.div>
-
           <motion.h1 initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.9, ease:E, delay:0.1 }}
-            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,8vw,112px)" }}
-            className="text-gray-900 leading-[0.88] tracking-tight mb-6">
+            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,8vw,112px)" }} className="text-gray-900 leading-[0.88] tracking-tight mb-6">
             quazieR,{" "}
-            <motion.span
-              style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundSize:"200% 200%" }}
-              animate={{ backgroundPosition:["0% 50%","100% 50%","0% 50%"] }}
-              transition={{ duration:5, repeat:Infinity, ease:"easeInOut" }}>
+            <motion.span style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", backgroundSize:"200% 200%", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}
+              animate={{ backgroundPosition:["0% 50%","100% 50%","0% 50%"] }} transition={{ duration:5, repeat:Infinity, ease:"easeInOut" }}>
               quicker
             </motion.span>
             {" "}and easier
           </motion.h1>
-
           <motion.p initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.25 }}
-            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(18px,2.2vw,28px)" }}
-            className="text-gray-400 mb-4">Work smarter. Not harder.</motion.p>
-
+            style={{ ...IF, fontStyle:"italic", fontSize:"clamp(18px,2.2vw,28px)" }} className="text-gray-400 mb-4">Work smarter. Not harder.</motion.p>
           <motion.p initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.35 }}
             style={SF} className="text-base text-gray-500 leading-relaxed max-w-2xl mx-auto mb-10">
             At <span style={{ color:"#7c3aed" }}>quazieR</span>, we build AI automation systems that answer calls, respond to messages, and follow up with leads automatically — so your business never misses an opportunity.
           </motion.p>
-
-          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.45 }}
-            className="flex flex-wrap items-center justify-center gap-4">
+          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.45 }} className="flex flex-wrap items-center justify-center gap-4">
             <BlurBtn dark onClick={()=>goto("pricing")}>See pricing</BlurBtn>
             <BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Contact us</BlurBtn>
             <motion.button onClick={()=>document.getElementById("demo-section")?.scrollIntoView({ behavior:"smooth" })}
               whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
-              style={{ ...SF, background:"rgba(124,58,237,0.07)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.2)", color:"#7c3aed" }}
-              className="px-8 py-4 rounded-full text-sm font-semibold">
-              Try our AI
-            </motion.button>
+              style={{ ...SF, background:"rgba(124,58,237,0.07)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.2)", color:"#7c3aed", borderRadius:"9999px", padding:"14px 32px" }}
+              className="text-sm font-semibold">Try our AI</motion.button>
           </motion.div>
         </motion.div>
-
-        {/* Stats card */}
         <motion.div initial={{ opacity:0, y:50, scale:0.96 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:1.1, ease:E, delay:0.6 }}
           className="mx-auto mt-20 max-w-4xl rounded-3xl overflow-hidden"
-          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 30px 80px rgba(124,58,237,0.1), 0 2px 0 rgba(255,255,255,0.8) inset" }}>
+          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 30px 80px rgba(124,58,237,0.1),0 2px 0 rgba(255,255,255,0.8) inset" }}>
           <div className="p-8 md:p-14">
             <div className="grid gap-8 md:grid-cols-3">
               {STATS.map((s,i)=>(
-                <motion.div key={i} initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.9+i*0.12, ease:E }}
-                  whileHover={{ scale:1.04 }} className="text-center cursor-default">
-                  <p style={{ ...IF, fontStyle:"italic", fontSize:"clamp(38px,5vw,64px)", background:"linear-gradient(135deg,#7c3aed,#a855f7)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>{s.n}</p>
+                <motion.div key={i} initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.9+i*0.12 }} whileHover={{ scale:1.04 }} className="text-center cursor-default">
+                  <p style={{ ...IF, fontStyle:"italic", fontSize:"clamp(38px,5vw,64px)", background:"linear-gradient(135deg,#7c3aed,#a855f7)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>{s.n}</p>
                   <p style={SF} className="text-sm text-gray-500 leading-snug mt-2">{s.l}</p>
                 </motion.div>
               ))}
@@ -775,7 +387,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </motion.div>
       </section>
 
-      {/* TICKER */}
       <div className="overflow-hidden border-y py-4" style={{ borderColor:"rgba(124,58,237,0.08)", background:"rgba(255,255,255,0.3)", backdropFilter:"blur(8px)" }}>
         <div className="flex gap-10" style={{ width:"max-content", animation:"ticker 32s linear infinite" }}>
           {[...TICKER,...TICKER].map((t,i)=>(
@@ -787,22 +398,15 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         <style>{`@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
       </div>
 
-      {/* PROBLEM */}
       <section className="py-36 px-6">
         <div className="mx-auto grid max-w-6xl gap-16 md:grid-cols-[1fr_1.9fr] md:gap-28">
-          <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
-            className="md:sticky md:top-32 md:self-start">
+          <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }} className="md:sticky md:top-32 md:self-start">
             <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The problem</p>
-            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,4.5vw,64px)" }} className="text-gray-900 leading-[0.93]">
-              Good businesses<br/>lose <em style={{ color:"#7c3aed" }}>quietly.</em>
-            </h2>
-            {/* Animated dot grid */}
+            <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,4.5vw,64px)" }} className="text-gray-900 leading-[0.93]">Good businesses<br/>lose <em style={{ color:"#7c3aed" }}>quietly.</em></h2>
             <div className="mt-10 grid gap-1.5" style={{ gridTemplateColumns:"repeat(8,1fr)", width:"fit-content" }}>
-              {Array.from({ length: 40 }, (_, i) => (
-                <motion.div key={i} className="h-2 w-2 rounded-full"
-                  style={{ background:"rgba(124,58,237,0.25)" }}
-                  animate={{ opacity:[0.15,1,0.15], scale:[0.6,1.2,0.6] }}
-                  transition={{ duration:2.5, repeat:Infinity, delay:i*0.08, ease:"easeInOut" }}/>
+              {Array.from({ length:40 }, (_,i)=>(
+                <motion.div key={i} className="h-2 w-2 rounded-full" style={{ background:"rgba(124,58,237,0.25)" }}
+                  animate={{ opacity:[0.15,1,0.15], scale:[0.6,1.2,0.6] }} transition={{ duration:2.5, repeat:Infinity, delay:i*0.08, ease:"easeInOut" }}/>
               ))}
             </div>
             <p style={SF} className="mt-3 text-xs uppercase tracking-widest text-gray-300">Each dot — a missed lead</p>
@@ -810,22 +414,19 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
           <div style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
             {[
               "Most businesses don't lose customers because they're bad at what they do.",
-              <><strong className="font-semibold text-gray-900">They lose them because responses arrive too late.</strong> Calls come in while you're busy. Messages wait while your attention is elsewhere. Leads disappear quietly — not because you don't care, but because you're human and time is limited.</>,
+              <><strong className="font-semibold text-gray-900">They lose them because responses arrive too late.</strong> Calls come in while you&apos;re busy. Messages wait while your attention is elsewhere. Leads disappear quietly — not because you don&apos;t care, but because you&apos;re human and time is limited.</>,
               "In today's market, speed matters. Consistency matters. Availability matters.",
               <>The average lead expects a reply <strong className="text-gray-900">within 5 minutes.</strong> Most businesses respond in 5 hours — or never. That gap is where revenue quietly disappears.</>,
               <>Our AI systems close that gap permanently. <strong className="text-gray-900">Every call answered. Every message replied to. Every lead followed up.</strong> Without you lifting a finger.</>,
             ].map((t,i)=>(
-              <motion.p key={i} initial={{ opacity:0, x:30 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true, margin:"-40px" }}
-                transition={{ duration:0.7, ease:E, delay:i*0.08 }}
-                style={{ ...SF, borderBottom:"1px solid rgba(0,0,0,0.05)" }}
-                className="py-7 text-sm leading-[1.95] text-gray-500">{t}</motion.p>
+              <motion.p key={i} initial={{ opacity:0, x:30 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true, margin:"-40px" }} transition={{ duration:0.7, ease:E, delay:i*0.08 }}
+                style={{ ...SF, borderBottom:"1px solid rgba(0,0,0,0.05)" }} className="py-7 text-sm leading-[1.95] text-gray-500">{t}</motion.p>
             ))}
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
+      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)" }}>
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="text-center mb-16">
             <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">How it works</p>
@@ -837,7 +438,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               <motion.div key={i} initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.15, ease:E }}
                 whileHover={{ y:-8, boxShadow:"0 24px 60px rgba(124,58,237,0.1)" }}
                 className="rounded-2xl p-8 cursor-default"
-                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.9)", transition:"box-shadow 0.3s" }}>
                 <span style={{ ...IF, fontStyle:"italic", fontSize:"3.5rem", color:"rgba(124,58,237,0.18)" }} className="block mb-4 leading-none">{s.n}</span>
                 <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-3">{s.title}</h3>
                 <p style={SF} className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
@@ -851,17 +452,16 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* SERVICES */}
       <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}>
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">What we build</p>
-              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5vw,70px)" }} className="text-gray-900 leading-[0.93]">AI that works<br/><em style={{ color:"#7c3aed" }}>while you don't.</em></h2>
+              <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5vw,70px)" }} className="text-gray-900 leading-[0.93]">AI that works<br/><em style={{ color:"#7c3aed" }}>while you don&apos;t.</em></h2>
             </motion.div>
             <motion.button onClick={()=>goto("services")} whileHover={{ scale:1.04 }}
-              style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}
-              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors self-start">
+              style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"12px", padding:"10px 20px" }}
+              className="text-xs font-medium uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors self-start">
               All services →
             </motion.button>
           </div>
@@ -870,21 +470,21 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               <motion.div key={i} initial={{ opacity:0, y:40, scale:0.96 }} whileInView={{ opacity:1, y:0, scale:1 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
                 whileHover={{ y:-7, boxShadow:"0 20px 60px rgba(124,58,237,0.1)" }}
                 className="group rounded-2xl p-8 cursor-default"
-                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
                 <p style={{ ...IF, fontStyle:"italic", fontSize:"2.2rem", color:"rgba(124,58,237,0.2)" }} className="mb-4 leading-none">{s.n}</p>
                 <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{s.title}</h3>
                 <p style={SF} className="text-sm text-gray-500 leading-relaxed mb-4">{s.desc}</p>
                 <motion.span whileHover={{ scale:1.06 }}
-                  style={{ ...SF, background:"rgba(124,58,237,0.08)", color:"#7c3aed", backdropFilter:"blur(6px)", border:"1px solid rgba(124,58,237,0.12)" }}
-                  className="inline-block text-xs font-semibold px-3 py-1 rounded-full cursor-default">{s.price}</motion.span>
+                  style={{ ...SF, background:"rgba(124,58,237,0.08)", color:"#7c3aed", border:"1px solid rgba(124,58,237,0.12)", borderRadius:"9999px", padding:"4px 12px", display:"inline-block", fontSize:"11px", fontWeight:600 }}>
+                  {s.price}
+                </motion.span>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* DEMO */}
-      <section id="demo-section" className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
+      <section id="demo-section" className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)" }}>
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.8 }} className="text-center mb-16">
             <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Live demo</p>
@@ -906,8 +506,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,0.9)", minHeight:520, boxShadow:"0 8px 40px rgba(0,0,0,0.06)" }}>
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">AI Voice</p>
               <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(22px,3vw,34px)" }} className="text-gray-900 mb-3">Call our AI receptionist</h3>
-              <p style={SF} className="text-sm text-gray-500 max-w-xs leading-relaxed mb-10">Experience a real AI answering calls 24/7. Pick up the phone — it's live right now.</p>
-              {/* Animated rings */}
+              <p style={SF} className="text-sm text-gray-500 max-w-xs leading-relaxed mb-10">Experience a real AI answering calls 24/7. Pick up the phone — it&apos;s live right now.</p>
               <div className="relative flex items-center justify-center mb-10">
                 {[70,100,130,160].map((s,i)=>(
                   <motion.div key={s} className="absolute rounded-full" style={{ width:s, height:s, border:"1px solid rgba(124,58,237,0.18)" }}
@@ -920,17 +519,15 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" fill="white"/></svg>
                 </motion.div>
               </div>
-              <motion.a href="tel:+15186623244" onClick={()=>trackLead()}
-                whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
-                style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.3)" }}
-                className="px-10 py-4 rounded-full text-sm font-semibold text-white mb-3 block text-center">Call now</motion.a>
+              <motion.a href="tel:+15186623244" onClick={()=>trackLead()} whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
+                style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.3)", borderRadius:"9999px", padding:"14px 40px" }}
+                className="text-sm font-semibold text-white mb-3 block text-center">Call now</motion.a>
               <p style={SF} className="text-xs text-gray-400">Test our AI voice agent live</p>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* COMPARISON */}
       <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }} className="mb-14">
@@ -947,12 +544,10 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
             </div>
             {COMPARE.map(([feat,ours,theirs],i)=>(
               <motion.div key={i} initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} transition={{ delay:0.05*i }}
-                whileHover={{ background:"rgba(124,58,237,0.03)" }}
+                whileHover={{ background:"rgba(124,58,237,0.02)" }}
                 className="grid grid-cols-[1.6fr_1fr_1fr]" style={{ borderBottom:"1px solid rgba(0,0,0,0.04)" }}>
                 <div style={SF} className="flex items-center px-6 py-4 text-sm text-gray-500">{feat}</div>
-                <div style={{ ...SF, borderLeft:"1px solid rgba(0,0,0,0.04)" }} className="flex items-center gap-2 px-6 py-4 text-sm font-medium text-purple-700">
-                  <span className="text-purple-400 text-xs">◆</span>{ours}
-                </div>
+                <div style={{ ...SF, borderLeft:"1px solid rgba(0,0,0,0.04)" }} className="flex items-center gap-2 px-6 py-4 text-sm font-medium text-purple-700"><span className="text-purple-400 text-xs">◆</span>{ours}</div>
                 <div style={{ ...SF, borderLeft:"1px solid rgba(0,0,0,0.04)" }} className="flex items-center px-6 py-4 text-sm text-gray-400">{theirs}</div>
               </motion.div>
             ))}
@@ -960,8 +555,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* PRICING PREVIEW */}
-      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)" }}>
+      <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.25)" }}>
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}>
@@ -975,11 +569,10 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               <motion.div key={i} initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
                 whileHover={{ y:-7 }}
                 className={`rounded-2xl p-7 flex flex-col relative cursor-default ${p.hot?"ring-2 ring-purple-400":""}`}
-                style={{ background:p.hot?"rgba(124,58,237,0.05)":"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                style={{ background:p.hot?"rgba(124,58,237,0.04)":"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
                 {p.hot && <motion.span initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.5, type:"spring" }}
-                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white">Popular</motion.span>}
-                {p.custom && <span style={SF} className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-gray-600 bg-gray-100">Custom</span>}
+                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", position:"absolute", top:"-12px", left:"50%", transform:"translateX(-50%)", padding:"4px 14px", borderRadius:"9999px", fontSize:"11px", fontWeight:700, color:"white" }}>Popular</motion.span>}
+                {p.custom && <span style={{ ...SF, background:"#f3f4f6", color:"#6b7280", position:"absolute", top:"-12px", left:"50%", transform:"translateX(-50%)", padding:"4px 14px", borderRadius:"9999px", fontSize:"11px", fontWeight:700 }}>Custom</span>}
                 <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">{p.n}</p>
                 <h3 style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{p.title}</h3>
                 <p style={SF} className="text-sm text-gray-500 mb-5 leading-relaxed">{p.desc}</p>
@@ -998,12 +591,11 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
                     </li>
                   ))}
                 </ul>
-                <motion.button onClick={()=>{ trackLead(); goto("contact"); }}
-                  whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                   style={p.hot
-                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }
-                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)" }}
-                  className={`w-full py-3 rounded-xl text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
+                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius:"12px", border:"none", padding:"12px" }
+                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)", borderRadius:"12px", padding:"12px" }}
+                  className={`w-full text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
                   {p.custom?"Get a quote":"Get started"}
                 </motion.button>
               </motion.div>
@@ -1016,19 +608,16 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* FOUNDERS */}
       <section className="py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-[1fr_1.6fr] md:gap-24">
-            <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
-              className="md:sticky md:top-32 md:self-start">
+            <motion.div initial={{ opacity:0, x:-40 }} whileInView={{ opacity:1, x:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }} className="md:sticky md:top-32 md:self-start">
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The founders</p>
               <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(32px,4vw,56px)" }} className="text-gray-900 leading-[0.93]">Built by people<br/><em style={{ color:"#7c3aed" }}>who care.</em></h2>
               <div className="mt-8 flex flex-wrap gap-2">
                 {["Michael Brito","Badre Elkhammal"].map(name=>(
                   <motion.span key={name} whileHover={{ scale:1.04 }}
-                    style={{ ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)" }}
-                    className="rounded-full px-4 py-1.5 text-sm text-gray-600 cursor-default">{name}</motion.span>
+                    style={{ ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)", borderRadius:"9999px", padding:"6px 16px", fontSize:"14px", color:"#4b5563", cursor:"default" }}>{name}</motion.span>
                 ))}
               </div>
             </motion.div>
@@ -1046,15 +635,13 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="px-6 pb-36 pt-10">
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{ opacity:0, scaleX:0 }} whileInView={{ opacity:1, scaleX:1 }} viewport={{ once:true }} transition={{ duration:1 }}
             className="mb-20 h-px w-full" style={{ background:"linear-gradient(to right,transparent,rgba(124,58,237,0.4),transparent)" }}/>
           <div className="grid gap-14 md:grid-cols-2 md:gap-24">
             <motion.h2 initial={{ opacity:0, y:50 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1.1, ease:E }}
-              style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,7.5vw,110px)" }}
-              className="text-gray-900 leading-[0.88]">
+              style={{ ...IF, fontStyle:"italic", fontSize:"clamp(52px,7.5vw,110px)" }} className="text-gray-900 leading-[0.88]">
               A calmer<br/>way to<br/><em style={{ color:"#7c3aed" }}>grow.</em>
             </motion.h2>
             <motion.div initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E, delay:0.15 }} className="flex flex-col justify-center">
@@ -1066,8 +653,8 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               <div className="mt-7 flex flex-wrap gap-3">
                 {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
                   <motion.span key={t} whileHover={{ scale:1.05 }}
-                    style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)" }}
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-500 cursor-default">
+                    style={{ ...SF, background:"rgba(255,255,255,0.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.12)", borderRadius:"9999px", padding:"4px 12px", fontSize:"12px", color:"#6b7280", cursor:"default" }}
+                    className="flex items-center gap-1.5">
                     <span className="h-1 w-1 rounded-full bg-purple-400"/>{t}
                   </motion.span>
                 ))}
@@ -1080,9 +667,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRICING PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 function PricingPage({ goto }: { goto:(p:Page)=>void }) {
   const [annual, setAnnual] = useState(false);
   return (
@@ -1090,16 +674,14 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
       <div className="mx-auto max-w-6xl">
         <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8 }} className="text-center mb-16">
           <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Pricing</p>
-          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(40px,6vw,80px)" }} className="text-gray-900 leading-tight mb-4">
-            Honest pricing.<br/><em style={{ color:"#7c3aed" }}>Real results.</em>
-          </h1>
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(40px,6vw,80px)" }} className="text-gray-900 leading-tight mb-4">Honest pricing.<br/><em style={{ color:"#7c3aed" }}>Real results.</em></h1>
           <p style={SF} className="text-gray-500 max-w-xl mx-auto mb-8">No hidden fees. No long-term contracts. No sales games. Pick the plan that fits and be live within 48 hours.</p>
           <motion.div initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.3 }}
             className="inline-flex items-center gap-4 px-5 py-3 rounded-full"
             style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.06)" }}>
             <span style={SF} className={`text-sm font-medium transition-colors ${!annual?"text-gray-900":"text-gray-400"}`}>Monthly</span>
             <motion.button onClick={()=>setAnnual(!annual)} className="relative h-7 w-12 rounded-full transition-colors"
-              style={{ background:annual?"linear-gradient(135deg,#7c3aed,#a855f7)":"rgba(0,0,0,0.1)" }}>
+              style={{ background:annual?"linear-gradient(135deg,#7c3aed,#a855f7)":"rgba(0,0,0,0.1)", border:"none" }}>
               <motion.span animate={{ x:annual?22:2 }} transition={{ type:"spring", stiffness:500, damping:35 }}
                 className="absolute top-[3px] left-0 h-[22px] w-[22px] rounded-full bg-white shadow-sm"/>
             </motion.button>
@@ -1114,11 +696,10 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
               <motion.div key={i} initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, delay:i*0.1, ease:E }}
                 whileHover={{ y:-7 }}
                 className={`rounded-2xl p-8 flex flex-col relative cursor-default ${p.hot?"ring-2 ring-purple-400":""}`}
-                style={{ background:p.hot?"rgba(124,58,237,0.04)":"rgba(255,255,255,0.65)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.05)", transition:"box-shadow 0.3s" }}>
+                style={{ background:p.hot?"rgba(124,58,237,0.04)":"rgba(255,255,255,0.65)", backdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
                 {p.hot && <motion.span initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.5, type:"spring" }}
-                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white">Most popular</motion.span>}
-                {p.custom && <span style={SF} className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-gray-600 bg-gray-100">Bespoke</span>}
+                  style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", position:"absolute", top:"-12px", left:"50%", transform:"translateX(-50%)", padding:"4px 14px", borderRadius:"9999px", fontSize:"11px", fontWeight:700, color:"white" }}>Most popular</motion.span>}
+                {p.custom && <span style={{ ...SF, background:"#f3f4f6", color:"#6b7280", position:"absolute", top:"-12px", left:"50%", transform:"translateX(-50%)", padding:"4px 14px", borderRadius:"9999px", fontSize:"11px", fontWeight:700 }}>Bespoke</span>}
                 <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">{p.n}</p>
                 <h3 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mb-2">{p.title}</h3>
                 <p style={SF} className="text-sm text-gray-500 mb-6 leading-relaxed">{p.desc}</p>
@@ -1140,19 +721,18 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
                 </ul>
                 <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                   style={p.hot
-                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)" }
-                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)" }}
-                  className={`w-full py-3.5 rounded-xl text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
+                    ? { ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius:"12px", border:"none", padding:"14px" }
+                    : { ...SF, background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(0,0,0,0.09)", borderRadius:"12px", padding:"14px" }}
+                  className={`w-full text-sm font-semibold ${p.hot?"text-white":"text-gray-700"}`}>
                   {p.custom?"Request a quote":"Get started"}
                 </motion.button>
               </motion.div>
             );
           })}
         </div>
-        {/* n8n */}
         <motion.div initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:1, ease:E }}
           className="mt-8 overflow-hidden rounded-2xl p-10 md:p-14"
-          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.12)", boxShadow:"0 8px 40px rgba(124,58,237,0.06)" }}>
+          style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(16px)", border:"1px solid rgba(124,58,237,0.12)" }}>
           <div className="grid gap-10 md:grid-cols-[1fr_2fr]">
             <div>
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-3">Custom plan</p>
@@ -1163,16 +743,14 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
               <div className="grid gap-4 md:grid-cols-2">
                 {N8N_FEATURES.map((f,i)=>(
                   <motion.div key={i} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ delay:i*0.08 }}
-                    whileHover={{ y:-4 }}
-                    className="rounded-xl p-5" style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.88)" }}>
+                    whileHover={{ y:-4 }} className="rounded-xl p-5"
+                    style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.88)" }}>
                     <p style={SF} className="text-sm font-semibold text-gray-900 mb-1">{f.title}</p>
                     <p style={SF} className="text-xs leading-relaxed text-gray-500">{f.desc}</p>
                   </motion.div>
                 ))}
               </div>
-              <div className="mt-8">
-                <BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Discuss your workflow</BlurBtn>
-              </div>
+              <div className="mt-8"><BlurBtn onClick={()=>{ trackLead(); goto("contact"); }}>Discuss your workflow</BlurBtn></div>
             </div>
           </div>
         </motion.div>
@@ -1185,9 +763,6 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SERVICES PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
   const items = [
     { n:"01", title:"AI Website",           headline:"Your 24/7 sales machine.",       desc:"We build high-conversion websites that don't just look good — they actively capture and qualify leads around the clock.", details:["Custom design aligned to your brand","Lead capture with instant AI response","Mobile-first, performance-optimised","Connected to your CRM from day one","Built-in analytics and tracking"] },
@@ -1219,7 +794,7 @@ function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
                 <p style={SF} className="text-gray-500 leading-relaxed mb-6">{s.desc}</p>
                 <ul className="space-y-2.5 mb-8">
                   {s.details.map(d=>(
-                    <motion.li key={d} style={SF} className="flex items-start gap-2 text-sm text-gray-600" whileHover={{ x:4 }}>
+                    <motion.li key={d} style={SF} whileHover={{ x:4 }} className="flex items-start gap-2 text-sm text-gray-600">
                       <span style={{ color:"#7c3aed" }} className="mt-0.5 shrink-0">✓</span>{d}
                     </motion.li>
                   ))}
@@ -1234,9 +809,6 @@ function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ABOUT PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 function AboutPage({ goto }: { goto:(p:Page)=>void }) {
   const values = [
     { title:"Calm over chaos",   desc:"We build systems that reduce noise, not add to it. Every decision is guided by what creates the most clarity." },
@@ -1263,9 +835,8 @@ function AboutPage({ goto }: { goto:(p:Page)=>void }) {
               { name:"Badre Elkhammal", role:"Co-founder", bio:"Growth operator and AI integration specialist. Has built and scaled sales automation systems for dozens of service businesses." },
             ].map((f,i)=>(
               <motion.div key={i} initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }} transition={{ duration:0.7, delay:i*0.12 }}
-                whileHover={{ y:-5 }}
-                className="rounded-2xl p-8"
-                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", boxShadow:"0 4px 20px rgba(0,0,0,0.04)", transition:"box-shadow 0.3s" }}>
+                whileHover={{ y:-5 }} className="rounded-2xl p-8"
+                style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
                 <div className="h-px w-10 mb-6" style={{ background:"linear-gradient(90deg,#7c3aed,#a855f7)" }}/>
                 <h3 style={{ ...IF, fontStyle:"italic" }} className="text-2xl text-gray-900 mb-1">{f.name}</h3>
                 <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">{f.role}</p>
@@ -1279,8 +850,7 @@ function AboutPage({ goto }: { goto:(p:Page)=>void }) {
           <div className="grid gap-4 md:grid-cols-2">
             {values.map((v,i)=>(
               <motion.div key={i} initial={{ opacity:0, scale:0.97 }} whileInView={{ opacity:1, scale:1 }} viewport={{ once:true }} transition={{ delay:i*0.1 }}
-                whileHover={{ y:-4 }}
-                className="rounded-2xl p-7"
+                whileHover={{ y:-4 }} className="rounded-2xl p-7"
                 style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(14px)", border:"1px solid rgba(255,255,255,0.88)", transition:"box-shadow 0.3s" }}>
                 <p style={{ ...IF, fontStyle:"italic" }} className="text-xl text-gray-900 mb-2">{v.title}</p>
                 <p style={SF} className="text-sm text-gray-500 leading-relaxed">{v.desc}</p>
@@ -1297,17 +867,14 @@ function AboutPage({ goto }: { goto:(p:Page)=>void }) {
           </blockquote>
           <p style={SF} className="text-sm text-white/50 mb-8 relative z-10">Michael &amp; Badre, quazieR</p>
           <motion.button onClick={()=>{ trackLead(); goto("contact"); }} whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
-            style={{ ...SF, background:"rgba(255,255,255,0.12)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.25)" }}
-            className="px-8 py-4 rounded-full text-sm font-semibold text-white relative z-10">Work with us</motion.button>
+            style={{ ...SF, background:"rgba(255,255,255,0.12)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"9999px", padding:"14px 32px" }}
+            className="text-sm font-semibold text-white relative z-10">Work with us</motion.button>
         </motion.div>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CONTACT PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 function ContactPage() {
   return (
     <div className="pt-32 pb-24 px-6">
@@ -1315,9 +882,7 @@ function ContactPage() {
         <div className="grid gap-16 md:grid-cols-[1fr_1.4fr]">
           <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, ease:E }}>
             <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Contact</p>
-            <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5.5vw,80px)" }} className="text-gray-900 leading-[0.88] mb-6">
-              Let&apos;s talk<br/><em style={{ color:"#7c3aed" }}>about your business.</em>
-            </h1>
+            <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5.5vw,80px)" }} className="text-gray-900 leading-[0.88] mb-6">Let&apos;s talk<br/><em style={{ color:"#7c3aed" }}>about your business.</em></h1>
             <p style={SF} className="text-gray-500 leading-relaxed mb-12">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
             <div className="space-y-6 mb-10">
               {[{label:"Email",value:"quazier.ai@gmail.com"},{label:"Phone / WhatsApp",value:"(518) 662-3244"},{label:"Based in",value:"Available worldwide"}].map(c=>(
@@ -1327,7 +892,6 @@ function ContactPage() {
                 </div>
               ))}
             </div>
-            {/* Social in contact too */}
             <div className="flex flex-wrap gap-3 mb-6">
               <motion.a href="https://www.instagram.com/quazier.ai" target="_blank" rel="noopener noreferrer"
                 whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
@@ -1342,29 +906,24 @@ function ContactPage() {
                 whileHover={{ scale:1.05, y:-2 }} whileTap={{ scale:0.96 }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                 style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                 Facebook
               </motion.a>
             </div>
             <div className="flex flex-wrap gap-3">
               {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                <span key={t} style={{ ...SF, background:"rgba(124,58,237,0.06)", border:"1px solid rgba(124,58,237,0.15)" }} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-gray-600">
+                <span key={t} style={{ ...SF, background:"rgba(124,58,237,0.06)", border:"1px solid rgba(124,58,237,0.15)", borderRadius:"9999px", padding:"8px 16px", fontSize:"14px", color:"#6b7280" }} className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-purple-400"/>{t}
                 </span>
               ))}
             </div>
           </motion.div>
-
           <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.8, ease:E, delay:0.15 }}
             className="rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-8"
             style={{ background:"rgba(255,255,255,0.6)", backdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.9)", boxShadow:"0 24px 64px rgba(124,58,237,0.08)" }}>
             <div>
               <div className="h-1 w-14 mx-auto mb-6 rounded-full" style={{ background:"linear-gradient(90deg,#7c3aed,#a855f7)" }}/>
-              <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(26px,3.5vw,40px)" }} className="text-gray-900 mb-3">
-                Book a free<br/><em style={{ color:"#7c3aed" }}>20-min call.</em>
-              </h3>
+              <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(26px,3.5vw,40px)" }} className="text-gray-900 mb-3">Book a free<br/><em style={{ color:"#7c3aed" }}>20-min call.</em></h3>
               <p style={SF} className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.</p>
             </div>
             <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -1377,12 +936,9 @@ function ContactPage() {
               ))}
             </div>
             <motion.a href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG" target="_blank" rel="noopener noreferrer"
-              onClick={()=>trackLead()}
-              whileHover={{ scale:1.05, y:-3, boxShadow:"0 16px 48px rgba(124,58,237,0.35)" }} whileTap={{ scale:0.97 }}
-              style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.28)" }}
-              className="w-full max-w-xs py-4 rounded-full text-sm font-semibold text-white text-center block">
-              Book your free call →
-            </motion.a>
+              onClick={()=>trackLead()} whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
+              style={{ ...SF, background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.28)", borderRadius:"9999px", padding:"14px 0" }}
+              className="w-full max-w-xs text-sm font-semibold text-white text-center block">Book your free call →</motion.a>
             <p style={SF} className="text-xs text-gray-400">Opens our scheduling page — pick any available slot</p>
           </motion.div>
         </div>
@@ -1391,18 +947,14 @@ function ContactPage() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ROOT
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function Home() {
   const [page, setPage] = useState<Page>("home");
   const goto = (p: Page) => { window.scrollTo({ top:0, behavior:"smooth" }); setTimeout(()=>setPage(p), 120); };
   return (
     <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={SF}>
       <Background/>
-      <ParticleNetwork/>
+      <FloatingParticles/>
       <CursorGlow/>
-      <div style={{ position:"relative", zIndex:3 }}>
       <Nav current={page} goto={goto}/>
       <AnimatePresence mode="wait">
         <motion.main key={page}
@@ -1418,7 +970,6 @@ export default function Home() {
         </motion.main>
       </AnimatePresence>
       <Footer goto={goto}/>
-      </div>
     </div>
   );
 }
