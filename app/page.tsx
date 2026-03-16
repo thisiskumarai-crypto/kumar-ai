@@ -734,8 +734,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
 
         {/* Stats card */}
         <motion.div initial={{ opacity:0, y:65, scale:0.93 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:1.2, ease:E, delay:1.1 }}
-          className="mx-auto mt-24 max-w-4xl rounded-3xl overflow-hidden" style={{ position:"relative", zIndex:4 }}
-          style={{ background:"rgba(255,255,255,0.58)", backdropFilter:"blur(26px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 30px 80px rgba(124,58,237,0.12),0 2px 0 rgba(255,255,255,0.8) inset" }}>
+          className="mx-auto mt-24 max-w-4xl rounded-3xl overflow-hidden" style={{ position:"relative", zIndex:4, background:"rgba(255,255,255,0.58)", backdropFilter:"blur(26px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 30px 80px rgba(124,58,237,0.12),0 2px 0 rgba(255,255,255,0.8) inset" }}>
           <div className="p-8 md:p-14">
             <div className="grid gap-8 md:grid-cols-3">
               {STATS.map((s,i)=>(
@@ -1380,3 +1379,4 @@ export default function Home() {
     </div>
   );
 }
+
