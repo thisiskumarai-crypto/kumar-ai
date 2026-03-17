@@ -175,15 +175,16 @@ function AnimatedCounter({ to, suffix }: { to: number; suffix: string }) {
 function SplitWords({ text, delay = 0, style, className }: {
   text: string; delay?: number; style?: React.CSSProperties; className?: string;
 }) {
+  const ref = useRef(null);
   return (
-    <span className={className} style={style}>
+    <span ref={ref} className={className} style={style}>
       {text.split(" ").map((word, i) => (
         <motion.span
           key={i}
           style={{ display:"inline-block", marginRight:"0.2em" }}
-          initial={{ y: 40, opacity: 0 }}
+          initial={{ y: 28, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.55, ease: E, delay: delay + i * 0.06 }}>
+          transition={{ duration: 0.5, ease: E, delay: delay + i * 0.06 }}>
           {word}
         </motion.span>
       ))}
@@ -702,17 +703,28 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
           </motion.div>
 
           {/* Headline */}
-          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(50px,8vw,112px)", lineHeight:0.95, perspective:600 }}
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(50px,8vw,112px)", lineHeight:1.15, perspective:600, overflow:"visible" }}
             className="text-gray-900 tracking-tight mb-6">
             {/* Line 1 */}
-            <span style={{ display:"block" }}>
-              <SplitWords text="quazieR," delay={0.05}/>
-            </span>
+            <motion.span style={{ display:"block", paddingBottom:"0.05em" }}
+              initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.55, ease:E, delay:0.05 }}>
+              quazieR,
+            </motion.span>
             {/* Line 2 */}
-            <span style={{ display:"block" }}>
-              <SplitWords text="quicker" delay={0.15}
-                style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}/>
-              <SplitWords text="and easier" delay={0.22}/>
+            <span style={{ display:"block", paddingBottom:"0.15em" }}>
+              <motion.span
+                style={{ display:"inline-block", marginRight:"0.2em", background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}
+                initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }}
+                transition={{ duration:0.55, ease:E, delay:0.15 }}>
+                quicker
+              </motion.span>
+              <motion.span
+                style={{ display:"inline-block" }}
+                initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }}
+                transition={{ duration:0.55, ease:E, delay:0.22 }}>
+                and easier
+              </motion.span>
             </span>
           </h1>
 
