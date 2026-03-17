@@ -711,13 +711,15 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               transition={{ duration:0.55, ease:E, delay:0.05 }}>
               quazieR,
             </motion.span>
-            {/* Line 2 */}
+            {/* Line 2 — quicker uses no opacity anim (iOS WebkitTextFillColor bug) */}
             <span style={{ display:"block", paddingBottom:"0.15em" }}>
               <motion.span
-                style={{ display:"inline-block", marginRight:"0.2em", background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}
-                initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }}
+                style={{ display:"inline-block", marginRight:"0.2em" }}
+                initial={{ y:28 }} animate={{ y:0 }}
                 transition={{ duration:0.55, ease:E, delay:0.15 }}>
-                quicker
+                <span style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                  quicker
+                </span>
               </motion.span>
               <motion.span
                 style={{ display:"inline-block" }}
