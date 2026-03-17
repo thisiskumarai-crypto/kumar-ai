@@ -183,7 +183,7 @@ function SplitWords({ text, delay = 0, style, className }: {
           style={{ display:"inline-block", marginRight:"0.2em" }}
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: E, delay: delay + i * 0.1 }}>
+          transition={{ duration: 0.55, ease: E, delay: delay + i * 0.06 }}>
           {word}
         </motion.span>
       ))}
@@ -292,20 +292,24 @@ function GlowCard({ children, className, style, hot }: {
 }
 
 // ─── CUSTOM CURSOR ────────────────────────────────────────────────────────────
-// FIX: use a single RAF loop instead of 4 separate springs
+// Only rendered on non-touch desktop devices
 function CustomCursor() {
   const ringRef = useRef<HTMLDivElement>(null);
   const dotRef  = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
+  const [isTouch, setIsTouch] = useState(true); // default true = hidden until confirmed mouse
 
-  // Smooth ring position via spring simulation in RAF
   const target = useRef({ x: -200, y: -200 });
   const current = useRef({ x: -200, y: -200 });
   const rafId = useRef<number>(0);
 
   useEffect(() => {
-    const STIFFNESS = 0.12; // lower = smoother lag, higher = snappier
+    // Detect touch device — if no fine pointer, bail out entirely
+    const isFinePointer = window.matchMedia("(pointer: fine)").matches;
+    if (!isFinePointer) return;
+    setIsTouch(false);
 
+    const STIFFNESS = 0.12;
     const loop = () => {
       current.current.x += (target.current.x - current.current.x) * STIFFNESS;
       current.current.y += (target.current.y - current.current.y) * STIFFNESS;
@@ -317,7 +321,6 @@ function CustomCursor() {
 
     const onMove = (e: MouseEvent) => {
       target.current = { x: e.clientX, y: e.clientY };
-      // Dot follows instantly (no lag)
       if (dotRef.current) {
         dotRef.current.style.transform = `translate(${e.clientX - 2.5}px, ${e.clientY - 2.5}px)`;
       }
@@ -332,6 +335,8 @@ function CustomCursor() {
       window.removeEventListener("mousemove", onMove);
     };
   }, [hover]);
+
+  if (isTouch) return null;
 
   return (
     <>
@@ -701,13 +706,13 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
             className="text-gray-900 tracking-tight mb-6">
             {/* Line 1 */}
             <span style={{ display:"block" }}>
-              <SplitWords text="quazieR," delay={0.12}/>
+              <SplitWords text="quazieR," delay={0.05}/>
             </span>
             {/* Line 2 */}
             <span style={{ display:"block" }}>
-              <SplitWords text="quicker" delay={0.35}
+              <SplitWords text="quicker" delay={0.15}
                 style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}/>
-              <SplitWords text="and easier" delay={0.52}/>
+              <SplitWords text="and easier" delay={0.22}/>
             </span>
           </h1>
 
@@ -1363,8 +1368,11 @@ export default function Home() {
   const [page, setPage] = useState<Page>("home");
   const goto = (p: Page) => { window.scrollTo({ top:0, behavior:"smooth" }); setTimeout(()=>setPage(p), 120); };
 
+  // Always start at top on mount/refresh
+  useEffect(() => { window.scrollTo({ top:0, behavior:"instant" as any }); }, []);
+
   return (
-    <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor:"none" }}>
+    <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor: typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches ? "none" : "auto" }}>
       {/* Inject all CSS animations once — zero runtime JS for any loop */}
       <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS }}/>
 
