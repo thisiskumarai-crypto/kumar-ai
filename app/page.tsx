@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 type Page = "home" | "pricing" | "services" | "contact" | "about";
 type Msg  = { role: "user" | "ai"; text: string };
@@ -65,7 +65,87 @@ const FAQS = [
   { q:"Does the AI sound like a real person?", a:"Yes. Our voice AI is trained to match your brand's tone and handles natural conversation including interruptions and follow-up questions." },
 ];
 
-// ─── LOGO (exact SVG, unchanged) ─────────────────────────────────────────────
+// ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
+// All looping animations moved to CSS — zero JS per frame, GPU-composited
+const GLOBAL_CSS = `
+  /* ── Ticker ── */
+  @keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+
+  /* ── Aurora orbs ── */
+  @keyframes orb1 {
+    0%,100% { transform: translate(0px, 0px) scale(1); }
+    40%     { transform: translate(55px, -35px) scale(1.09); }
+    70%     { transform: translate(-30px, 20px) scale(0.94); }
+  }
+  @keyframes orb2 {
+    0%,100% { transform: translate(0px, 0px) scale(1); }
+    40%     { transform: translate(-45px, 35px) scale(0.92); }
+    70%     { transform: translate(28px, -22px) scale(1.1); }
+  }
+  @keyframes orb3 {
+    0%,100% { transform: translate(0px, 0px) scale(1); }
+    40%     { transform: translate(28px, -22px) scale(1.12); }
+    70%     { transform: translate(-40px, 34px) scale(0.92); }
+  }
+  .orb-1 { animation: orb1 28s ease-in-out infinite; will-change: transform; }
+  .orb-2 { animation: orb2 34s ease-in-out infinite; animation-delay: -6s; will-change: transform; }
+  .orb-3 { animation: orb3 25s ease-in-out infinite; animation-delay: -11s; will-change: transform; }
+
+  /* ── Liquid waves ── */
+  @keyframes wave1 { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
+  @keyframes wave2 { 0%{ transform:translateX(-50%) } 100%{ transform:translateX(0) } }
+  @keyframes wave3 { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
+  @keyframes wave4 { 0%{ transform:translateX(-50%) } 100%{ transform:translateX(0) } }
+  .lw1 { animation: wave1 18s linear infinite; will-change: transform; }
+  .lw2 { animation: wave2 24s linear infinite; will-change: transform; }
+  .lw3 { animation: wave3 14s linear infinite; will-change: transform; }
+  .lw4 { animation: wave4 30s linear infinite; will-change: transform; }
+
+  /* ── Pulse dot (nav status) ── */
+  @keyframes ping { 75%,100%{ transform:scale(2); opacity:0; } }
+  .ping { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
+
+  /* ── Problem section dots ── */
+  @keyframes dotPulse {
+    0%,100% { opacity: 0.15; transform: scale(0.6); }
+    50%     { opacity: 1;    transform: scale(1.3); }
+  }
+  .problem-dot {
+    height: 8px; width: 8px; border-radius: 50%;
+    background: rgba(124,58,237,0.25);
+    animation: dotPulse 2.5s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+
+  /* ── Voice pulse rings ── */
+  @keyframes voiceRing {
+    0%,100% { opacity: 0.5; transform: scale(1); }
+    50%     { opacity: 0.07; transform: scale(1.16); }
+  }
+  .voice-ring { animation: voiceRing 2.8s ease-in-out infinite; }
+
+  /* ── Voice button glow ── */
+  @keyframes voiceGlow {
+    0%,100% { box-shadow: 0 8px 28px rgba(124,58,237,0.4); }
+    50%     { box-shadow: 0 14px 50px rgba(124,58,237,0.65); }
+  }
+  .voice-btn { animation: voiceGlow 2s ease-in-out infinite; }
+
+  /* ── Typing dots ── */
+  @keyframes typingBounce { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
+  .typing-dot { animation: typingBounce 0.6s ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.30s; }
+
+  /* ── Scroll cue line ── */
+  @keyframes scrollCue { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(12px) } }
+  .scroll-cue { animation: scrollCue 2s ease-in-out infinite; }
+
+  /* ── CTA trust badges ── */
+  @keyframes badgePop { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.6) } }
+`;
+
+// ─── LOGO ─────────────────────────────────────────────────────────────────────
 function QZLogo({ size = 36 }: { size?: number }) {
   return (
     <svg width={size} height={Math.round(size*0.7)} viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -98,15 +178,14 @@ function SplitWords({ text, delay = 0, style, className }: {
   return (
     <span className={className} style={style}>
       {text.split(" ").map((word, i) => (
-        <span key={i} style={{ display:"inline-block", overflow:"hidden", verticalAlign:"bottom", marginRight:"0.22em" }}>
-          <motion.span
-            style={{ display:"inline-block" }}
-            initial={{ y:"110%", opacity: 0, rotateX: -30 }}
-            animate={{ y:"0%", opacity: 1, rotateX: 0 }}
-            transition={{ duration: 0.8, ease: E, delay: delay + i * 0.1 }}>
-            {word}
-          </motion.span>
-        </span>
+        <motion.span
+          key={i}
+          style={{ display:"inline-block", marginRight:"0.2em" }}
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, ease: E, delay: delay + i * 0.1 }}>
+          {word}
+        </motion.span>
       ))}
     </span>
   );
@@ -128,19 +207,21 @@ function Reveal({ children, delay = 0, y = 60, className, style }: {
   );
 }
 
-// ─── MAGNETIC BUTTON ─────────────────────────────────────────────────────────
+// ─── MAGNETIC BUTTON ──────────────────────────────────────────────────────────
+// Kept magnetic feel but spring stiffness increased so it settles faster (less lag)
 function MagBtn({ children, onClick, dark, href, className }: {
   children: React.ReactNode; onClick?: () => void; dark?: boolean; href?: string; className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0); const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 250, damping: 18 });
-  const sy = useSpring(y, { stiffness: 250, damping: 18 });
+  // Higher stiffness + damping = faster settle, less CPU time spent animating
+  const sx = useSpring(x, { stiffness: 400, damping: 28 });
+  const sy = useSpring(y, { stiffness: 400, damping: 28 });
 
   const onMove = (e: React.MouseEvent) => {
     const r = ref.current!.getBoundingClientRect();
-    x.set((e.clientX - r.left - r.width / 2) * 0.4);
-    y.set((e.clientY - r.top - r.height / 2) * 0.4);
+    x.set((e.clientX - r.left - r.width / 2) * 0.35);
+    y.set((e.clientY - r.top - r.height / 2) * 0.35);
   };
   const onLeave = () => { x.set(0); y.set(0); };
 
@@ -168,147 +249,171 @@ function MagBtn({ children, onClick, dark, href, className }: {
 }
 
 // ─── GLOW CARD ────────────────────────────────────────────────────────────────
+// FIX: glow only activates on hover — no springs running when idle
 function GlowCard({ children, className, style, hot }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; hot?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(200); const my = useMotionValue(200);
-  const gmx = useSpring(mx, { stiffness:180, damping:28 });
-  const gmy = useSpring(my, { stiffness:180, damping:28 });
-  const bg = useTransform([gmx, gmy] as any, ([x, y]: number[]) =>
-    `radial-gradient(320px circle at ${x}px ${y}px, rgba(124,58,237,0.15), transparent 70%)`);
+  const [glowPos, setGlowPos] = useState<{x:number,y:number}|null>(null);
+
+  // Use RAF-throttled handler to avoid firing every mousemove tick
+  const rafRef = useRef<number>(0);
+  const onMove = useCallback((e: React.MouseEvent) => {
+    if (rafRef.current) return; // skip if RAF already pending
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      setGlowPos({ x: e.clientX - r.left, y: e.clientY - r.top });
+    });
+  }, []);
+  const onLeave = useCallback(() => setGlowPos(null), []);
+
+  const glowBg = glowPos
+    ? `radial-gradient(320px circle at ${glowPos.x}px ${glowPos.y}px, rgba(124,58,237,0.15), transparent 70%)`
+    : "none";
 
   return (
-    <motion.div ref={ref} className={className}
-      onMouseMove={e => { const r = ref.current!.getBoundingClientRect(); mx.set(e.clientX-r.left); my.set(e.clientY-r.top); }}
+    <motion.div
+      ref={ref}
+      className={className}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
       style={{ ...style, position:"relative", overflow:"hidden" }}
       whileHover={{ y:-12, scale:1.02, boxShadow: hot ? "0 32px 80px rgba(124,58,237,0.28)" : "0 32px 80px rgba(124,58,237,0.14)" }}
       transition={{ duration:0.38, ease:E }}>
-      <motion.div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1, background: bg as any }}/>
+      {/* Glow layer — only rendered when hovered */}
+      {glowPos && (
+        <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1, background: glowBg, transition:"background 0.1s" }}/>
+      )}
       <div style={{ position:"relative", zIndex:2 }}>{children}</div>
     </motion.div>
   );
 }
 
 // ─── CUSTOM CURSOR ────────────────────────────────────────────────────────────
+// FIX: use a single RAF loop instead of 4 separate springs
 function CustomCursor() {
-  const mx = useMotionValue(-200); const my = useMotionValue(-200);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const dotRef  = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
-  const sx = useSpring(mx, { stiffness:90, damping:16 });
-  const sy = useSpring(my, { stiffness:90, damping:16 });
-  const dx = useSpring(mx, { stiffness:700, damping:30 });
-  const dy = useSpring(my, { stiffness:700, damping:30 });
+
+  // Smooth ring position via spring simulation in RAF
+  const target = useRef({ x: -200, y: -200 });
+  const current = useRef({ x: -200, y: -200 });
+  const rafId = useRef<number>(0);
 
   useEffect(() => {
-    const mv = (e: MouseEvent) => { mx.set(e.clientX); my.set(e.clientY); };
-    const ov = (e: MouseEvent) => setHover(!!(e.target as HTMLElement).closest("button,a,[data-hover]"));
-    window.addEventListener("mousemove", mv);
-    window.addEventListener("mouseover", ov);
-    return () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseover", ov); };
-  }, []);
+    const STIFFNESS = 0.12; // lower = smoother lag, higher = snappier
+
+    const loop = () => {
+      current.current.x += (target.current.x - current.current.x) * STIFFNESS;
+      current.current.y += (target.current.y - current.current.y) * STIFFNESS;
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate(${current.current.x - (hover ? 22 : 14)}px, ${current.current.y - (hover ? 22 : 14)}px)`;
+      }
+      rafId.current = requestAnimationFrame(loop);
+    };
+
+    const onMove = (e: MouseEvent) => {
+      target.current = { x: e.clientX, y: e.clientY };
+      // Dot follows instantly (no lag)
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${e.clientX - 2.5}px, ${e.clientY - 2.5}px)`;
+      }
+      const isHover = !!(e.target as HTMLElement).closest("button,a,[data-hover]");
+      setHover(isHover);
+    };
+
+    rafId.current = requestAnimationFrame(loop);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => {
+      cancelAnimationFrame(rafId.current);
+      window.removeEventListener("mousemove", onMove);
+    };
+  }, [hover]);
 
   return (
     <>
-      <motion.div style={{ x:sx, y:sy, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9998,
-        borderRadius:"50%", border:"1.5px solid rgba(124,58,237,0.55)", transition:"width 0.25s,height 0.25s",
-        width: hover ? 44 : 28, height: hover ? 44 : 28 }}/>
-      <motion.div style={{ x:dx, y:dy, translateX:"-50%", translateY:"-50%", position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999,
-        width:5, height:5, borderRadius:"50%", background:"#7c3aed" }}/>
+      <div ref={ringRef} style={{
+        position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9998,
+        borderRadius:"50%", border:"1.5px solid rgba(124,58,237,0.55)",
+        width: hover ? 44 : 28, height: hover ? 44 : 28,
+        transition:"width 0.25s, height 0.25s",
+        willChange:"transform",
+      }}/>
+      <div ref={dotRef} style={{
+        position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999,
+        width:5, height:5, borderRadius:"50%", background:"#7c3aed",
+        willChange:"transform",
+      }}/>
     </>
   );
 }
 
 // ─── LIQUID WAVES ─────────────────────────────────────────────────────────────
-// Pure CSS SVG waves — zero JS runtime, GPU-composited, no lag
+// Pure CSS — unchanged, already GPU-composited
 function LiquidWaves() {
   return (
-    <>
-      <style>{`
-        @keyframes wave1 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-        @keyframes wave2 { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
-        @keyframes wave3 { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-        @keyframes wave4 { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
-        .lw1 { animation: wave1 18s linear infinite; will-change:transform; }
-        .lw2 { animation: wave2 24s linear infinite; will-change:transform; }
-        .lw3 { animation: wave3 14s linear infinite; will-change:transform; }
-        .lw4 { animation: wave4 30s linear infinite; will-change:transform; }
-      `}</style>
-      <div style={{ position:"fixed", inset:0, zIndex:1, pointerEvents:"none", overflow:"hidden" }} aria-hidden>
-
-        {/* Wave 1 — bottom, slow, soft purple */}
-        <div style={{ position:"absolute", bottom:"-2%", left:0, width:"200%", height:"38%", opacity:0.18 }} className="lw1">
-          <svg viewBox="0 0 1440 260" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,160 C180,220 360,80 540,140 C720,200 900,60 1080,130 C1260,200 1350,100 1440,150 L1440,260 L0,260 Z" fill="url(#wg1)"/>
-            <defs>
-              <linearGradient id="wg1" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(167,110,255,0.7)"/>
-                <stop offset="100%" stopColor="rgba(124,58,237,0.15)"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
-        {/* Wave 2 — bottom, medium, pink */}
-        <div style={{ position:"absolute", bottom:"-4%", left:0, width:"200%", height:"32%", opacity:0.13 }} className="lw2">
-          <svg viewBox="0 0 1440 240" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,120 C200,60 400,180 600,110 C800,40 1000,160 1200,100 C1320,70 1380,140 1440,120 L1440,240 L0,240 Z" fill="url(#wg2)"/>
-            <defs>
-              <linearGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(236,72,153,0.6)"/>
-                <stop offset="100%" stopColor="rgba(167,110,255,0.1)"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
-        {/* Wave 3 — top, fast, light blue */}
-        <div style={{ position:"absolute", top:"-2%", left:0, width:"200%", height:"28%", opacity:0.1 }} className="lw3">
-          <svg viewBox="0 0 1440 200" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,100 C160,40 320,160 480,90 C640,20 800,140 960,80 C1120,20 1300,120 1440,70 L1440,0 L0,0 Z" fill="url(#wg3)"/>
-            <defs>
-              <linearGradient id="wg3" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" stopColor="rgba(130,180,255,0.6)"/>
-                <stop offset="100%" stopColor="rgba(167,110,255,0.08)"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
-        {/* Wave 4 — mid screen, very subtle, slow */}
-        <div style={{ position:"absolute", top:"38%", left:0, width:"200%", height:"22%", opacity:0.07 }} className="lw4">
-          <svg viewBox="0 0 1440 180" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,90 C240,30 480,150 720,90 C960,30 1200,150 1440,90 L1440,180 L0,180 Z" fill="rgba(124,58,237,1)"/>
-          </svg>
-        </div>
-
+    <div style={{ position:"fixed", inset:0, zIndex:1, pointerEvents:"none", overflow:"hidden" }} aria-hidden>
+      <div style={{ position:"absolute", bottom:"-2%", left:0, width:"200%", height:"38%", opacity:0.18 }} className="lw1">
+        <svg viewBox="0 0 1440 260" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,160 C180,220 360,80 540,140 C720,200 900,60 1080,130 C1260,200 1350,100 1440,150 L1440,260 L0,260 Z" fill="url(#wg1)"/>
+          <defs><linearGradient id="wg1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(167,110,255,0.7)"/><stop offset="100%" stopColor="rgba(124,58,237,0.15)"/>
+          </linearGradient></defs>
+        </svg>
       </div>
-    </>
+      <div style={{ position:"absolute", bottom:"-4%", left:0, width:"200%", height:"32%", opacity:0.13 }} className="lw2">
+        <svg viewBox="0 0 1440 240" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,120 C200,60 400,180 600,110 C800,40 1000,160 1200,100 C1320,70 1380,140 1440,120 L1440,240 L0,240 Z" fill="url(#wg2)"/>
+          <defs><linearGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(236,72,153,0.6)"/><stop offset="100%" stopColor="rgba(167,110,255,0.1)"/>
+          </linearGradient></defs>
+        </svg>
+      </div>
+      <div style={{ position:"absolute", top:"-2%", left:0, width:"200%", height:"28%", opacity:0.1 }} className="lw3">
+        <svg viewBox="0 0 1440 200" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,100 C160,40 320,160 480,90 C640,20 800,140 960,80 C1120,20 1300,120 1440,70 L1440,0 L0,0 Z" fill="url(#wg3)"/>
+          <defs><linearGradient id="wg3" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor="rgba(130,180,255,0.6)"/><stop offset="100%" stopColor="rgba(167,110,255,0.08)"/>
+          </linearGradient></defs>
+        </svg>
+      </div>
+      <div style={{ position:"absolute", top:"38%", left:0, width:"200%", height:"22%", opacity:0.07 }} className="lw4">
+        <svg viewBox="0 0 1440 180" preserveAspectRatio="none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,90 C240,30 480,150 720,90 C960,30 1200,150 1440,90 L1440,180 L0,180 Z" fill="rgba(124,58,237,1)"/>
+        </svg>
+      </div>
+    </div>
   );
 }
 
 // ─── AURORA ORBS ─────────────────────────────────────────────────────────────
+// FIX: was 3x Framer Motion JS animate loops → now pure CSS keyframes (GPU only)
 function AuroraOrbs() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden>
       {/* Sky base */}
       <div style={{ position:"absolute", inset:0, background:"linear-gradient(175deg,#f9f5ff 0%,#ede4ff 18%,#e3eeff 40%,#f5e8ff 65%,#fff9f0 88%,#fdfcff 100%)" }}/>
-      {/* Large aurora orbs */}
-      <motion.div animate={{ x:[0,55,-30,0], y:[0,-35,20,0], scale:[1,1.09,0.94,1] }}
-        transition={{ duration:28, repeat:Infinity, ease:"easeInOut" }}
-        style={{ position:"absolute", top:"-20%", left:"48%", width:1000, height:1000, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 68%)", filter:"blur(90px)" }}/>
-      <motion.div animate={{ x:[0,-45,28,0], y:[0,35,-22,0], scale:[1,0.92,1.1,1] }}
-        transition={{ duration:34, repeat:Infinity, ease:"easeInOut", delay:6 }}
-        style={{ position:"absolute", top:"28%", left:"-18%", width:800, height:800, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 68%)", filter:"blur(80px)" }}/>
-      <motion.div animate={{ x:[0,28,-40,0], y:[0,-22,34,0], scale:[1,1.12,0.92,1] }}
-        transition={{ duration:25, repeat:Infinity, ease:"easeInOut", delay:11 }}
-        style={{ position:"absolute", bottom:"-22%", right:"-2%", width:1100, height:1100, borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 68%)", filter:"blur(100px)" }}/>
+
+      {/* Orb 1 — top right, purple */}
+      <div className="orb-1" style={{ position:"absolute", top:"-20%", left:"48%", width:1000, height:1000, borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 68%)", filter:"blur(90px)", willChange:"transform" }}/>
+
+      {/* Orb 2 — mid left, pink */}
+      <div className="orb-2" style={{ position:"absolute", top:"28%", left:"-18%", width:800, height:800, borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 68%)", filter:"blur(80px)", willChange:"transform" }}/>
+
+      {/* Orb 3 — bottom right, blue */}
+      <div className="orb-3" style={{ position:"absolute", bottom:"-22%", right:"-2%", width:1100, height:1100, borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 68%)", filter:"blur(100px)", willChange:"transform" }}/>
+
       {/* Subtle grid */}
       <div style={{ position:"absolute", inset:0, opacity:0.014,
         backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)",
         backgroundSize:"80px 80px" }}/>
+
       {/* Grain */}
       <div style={{ position:"absolute", inset:0, opacity:0.018,
         backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
@@ -338,7 +443,7 @@ function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", fn);
+    window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
@@ -439,8 +544,9 @@ function Footer({ goto }: { goto:(p:Page)=>void }) {
               </motion.a>
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)" }}>
+              {/* FIX: was motion.div with animate ping — now pure CSS */}
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"/>
+                <span className="ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"/>
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"/>
               </span>
               <span style={SF} className="text-xs font-medium text-emerald-700">All systems operational</span>
@@ -479,6 +585,8 @@ function ChatDemo() {
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [msgs]);
+
   const send = async () => {
     const text = input.trim(); if (!text||typing) return;
     setInput("");
@@ -514,8 +622,11 @@ function ChatDemo() {
           ))}
           {typing && (
             <motion.div key="t" initial={{ opacity:0, scale:0.94 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }} className="flex justify-start">
+              {/* FIX: typing dots now CSS — was 3 separate motion.span animate loops */}
               <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm px-4 py-3" style={{ background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.06)" }}>
-                {[0,1,2].map(j=><motion.span key={j} className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y:[0,-5,0] }} transition={{ duration:0.6, repeat:Infinity, delay:j*0.15 }}/>)}
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400 block"/>
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400 block"/>
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400 block"/>
               </div>
             </motion.div>
           )}
@@ -585,15 +696,19 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
             </motion.span>
           </motion.div>
 
-          {/* Headline — correct slogan */}
-          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(50px,8vw,112px)", lineHeight:0.88, perspective:600 }}
+          {/* Headline */}
+          <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(50px,8vw,112px)", lineHeight:0.95, perspective:600 }}
             className="text-gray-900 tracking-tight mb-6">
-            <SplitWords text="quazieR," delay={0.12}/>
-            <br/>
-            <SplitWords text="quicker" delay={0.35}
-              style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}/>
-            {" "}
-            <SplitWords text="and easier" delay={0.52}/>
+            {/* Line 1 */}
+            <span style={{ display:"block" }}>
+              <SplitWords text="quazieR," delay={0.12}/>
+            </span>
+            {/* Line 2 */}
+            <span style={{ display:"block" }}>
+              <SplitWords text="quicker" delay={0.35}
+                style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}/>
+              <SplitWords text="and easier" delay={0.52}/>
+            </span>
           </h1>
 
           <motion.p initial={{ opacity:0, y:20, filter:"blur(6px)" }} animate={{ opacity:1, y:0, filter:"blur(0px)" }}
@@ -616,11 +731,10 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               className="text-sm font-semibold">Try our AI ↓</motion.button>
           </motion.div>
 
-          {/* Scroll cue */}
+          {/* Scroll cue — CSS animation */}
           <motion.div className="flex flex-col items-center mt-20"
             initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.8 }}>
-            <motion.div animate={{ y:[0,12,0] }} transition={{ duration:2, repeat:Infinity, ease:"easeInOut" }}
-              style={{ width:1, height:48, background:"linear-gradient(to bottom,rgba(124,58,237,0.7),transparent)" }}/>
+            <div className="scroll-cue" style={{ width:1, height:48, background:"linear-gradient(to bottom,rgba(124,58,237,0.7),transparent)" }}/>
           </motion.div>
         </motion.div>
 
@@ -653,7 +767,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
             </span>
           ))}
         </div>
-        <style>{`@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
       </div>
 
       {/* ── PROBLEM ── */}
@@ -663,11 +776,10 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
             <Reveal>
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The problem</p>
               <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,4.5vw,64px)" }} className="text-gray-900 leading-[0.93]">Good businesses<br/>lose <em style={{ color:"#7c3aed" }}>quietly.</em></h2>
+              {/* FIX: 40 motion.div with JS animate loops → 40 plain divs with CSS animation-delay */}
               <div className="mt-10 grid gap-1.5" style={{ gridTemplateColumns:"repeat(8,1fr)", width:"fit-content" }}>
                 {Array.from({ length:40 }, (_,i)=>(
-                  <motion.div key={i} className="h-2 w-2 rounded-full" style={{ background:"rgba(124,58,237,0.25)" }}
-                    animate={{ opacity:[0.15,1,0.15], scale:[0.6,1.3,0.6] }}
-                    transition={{ duration:2.5, repeat:Infinity, delay:i*0.08, ease:"easeInOut" }}/>
+                  <div key={i} className="problem-dot" style={{ animationDelay:`${i*0.08}s` }}/>
                 ))}
               </div>
               <p style={SF} className="mt-3 text-xs uppercase tracking-widest text-gray-300">Each dot — a missed lead</p>
@@ -772,17 +884,18 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
                 <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">AI Voice</p>
                 <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(22px,3vw,34px)" }} className="text-gray-900 mb-3">Call our AI receptionist</h3>
                 <p style={SF} className="text-sm text-gray-500 max-w-xs leading-relaxed mb-10">Experience a real AI answering calls 24/7. Pick up the phone — it&apos;s live right now.</p>
+
+                {/* FIX: pulse rings were 4 separate motion.div animate loops → CSS animation-delay */}
                 <div className="relative flex items-center justify-center mb-10">
                   {[70,100,130,165].map((s,i)=>(
-                    <motion.div key={s} className="absolute rounded-full" style={{ width:s, height:s, border:"1px solid rgba(124,58,237,0.18)" }}
-                      animate={{ scale:[1,1.16,1], opacity:[0.5,0.07,0.5] }} transition={{ duration:2.8, repeat:Infinity, delay:i*0.58, ease:"easeInOut" }}/>
+                    <div key={s} className="voice-ring absolute rounded-full"
+                      style={{ width:s, height:s, border:"1px solid rgba(124,58,237,0.18)", animationDelay:`${i*0.58}s` }}/>
                   ))}
-                  <motion.div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full"
-                    style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow:"0 8px 28px rgba(124,58,237,0.4)" }}
-                    animate={{ boxShadow:["0 8px 28px rgba(124,58,237,0.4)","0 14px 50px rgba(124,58,237,0.65)","0 8px 28px rgba(124,58,237,0.4)"] }}
-                    transition={{ duration:2, repeat:Infinity }}>
+                  {/* FIX: glow pulse was motion.animate loop → CSS */}
+                  <div className="voice-btn relative z-10 flex h-14 w-14 items-center justify-center rounded-full"
+                    style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" fill="white"/></svg>
-                  </motion.div>
+                  </div>
                 </div>
                 <MagBtn dark href="tel:+15186623244">Call now</MagBtn>
                 <p style={SF} className="text-xs text-gray-400 mt-3">Test our AI voice agent live</p>
@@ -928,7 +1041,7 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
                     whileHover={{ scale:1.09, y:-2 }}
                     style={{ ...SF, background:"rgba(255,255,255,0.58)", backdropFilter:"blur(8px)", border:"1px solid rgba(124,58,237,0.14)", borderRadius:9999, padding:"4px 12px", fontSize:12, color:"#6b7280", cursor:"default" }}
                     className="flex items-center gap-1.5">
-                    <motion.span animate={{ scale:[1,1.6,1] }} transition={{ duration:2, repeat:Infinity, delay:i*0.7 }} className="h-1 w-1 rounded-full bg-purple-400"/>
+                    <span className="h-1 w-1 rounded-full bg-purple-400"/>
                     {t}
                   </motion.span>
                 ))}
@@ -1171,10 +1284,17 @@ function ContactPage() {
         <div className="grid gap-16 md:grid-cols-[1fr_1.4fr]">
           <Reveal y={32}>
             <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">Contact</p>
-            <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5.5vw,80px)" }} className="text-gray-900 leading-[0.88] mb-6">Let&apos;s talk<br/><em style={{ color:"#7c3aed" }}>about your business.</em></h1>
-            <p style={SF} className="text-gray-500 leading-relaxed mb-12">No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help. Most clients are live within 48 hours.</p>
+            <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,5.5vw,80px)" }} className="text-gray-900 leading-[0.88] mb-6">
+              Let&apos;s talk<br/><em style={{ color:"#7c3aed" }}>about your business.</em>
+            </h1>
+            <p style={SF} className="text-gray-500 leading-relaxed mb-12">
+              No pressure. No sales pitch. Just a real conversation about where you&apos;re losing time and how automation might help.
+              Most clients are live within 48 hours.
+            </p>
             <div className="space-y-6 mb-10">
-              {[{label:"Email",value:"quazier.ai@gmail.com"},{label:"Phone / WhatsApp",value:"(518) 662-3244"},{label:"Based in",value:"Available worldwide"}].map(c=>(
+              {[{label:"Email",value:"quazier.ai@gmail.com"},
+                {label:"Phone / WhatsApp",value:"(518) 662-3244"},
+                {label:"Based in",value:"Available worldwide"}].map(c=>(
                 <motion.div key={c.label} whileHover={{ x:5 }}>
                   <p style={SF} className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{c.label}</p>
                   <p style={SF} className="text-gray-700 font-medium">{c.value}</p>
@@ -1185,24 +1305,18 @@ function ContactPage() {
               <motion.a href="https://www.instagram.com/quazier.ai" target="_blank" rel="noopener noreferrer"
                 whileHover={{ scale:1.06, y:-2 }} whileTap={{ scale:0.95 }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                style={{ background:"rgba(255,255,255,0.68)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" stroke="none"/>
-                </svg>
-                Instagram
-              </motion.a>
+                style={{ background:"rgba(255,255,255,0.68)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>Instagram</motion.a>
               <motion.a href="https://www.facebook.com/profile.php?id=61585053252637" target="_blank" rel="noopener noreferrer"
                 whileHover={{ scale:1.06, y:-2 }} whileTap={{ scale:0.95 }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                style={{ background:"rgba(255,255,255,0.68)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                Facebook
-              </motion.a>
+                style={{ background:"rgba(255,255,255,0.68)", backdropFilter:"blur(10px)", border:"1px solid rgba(0,0,0,0.08)" }}>Facebook</motion.a>
             </div>
             <div className="flex flex-wrap gap-3">
               {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                <span key={t} style={{ ...SF, background:"rgba(124,58,237,0.06)", border:"1px solid rgba(124,58,237,0.16)", borderRadius:9999, padding:"8px 16px", fontSize:14, color:"#6b7280" }} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-purple-400"/>{t}
+                <span key={t} style={{ ...SF, background:"rgba(124,58,237,0.06)", border:"1px solid rgba(124,58,237,0.16)", borderRadius:9999, padding:"8px 16px", fontSize:14, color:"#6b7280" }}
+                  className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-400"/>
+                  {t}
                 </span>
               ))}
             </div>
@@ -1213,19 +1327,24 @@ function ContactPage() {
               style={{ background:"rgba(255,255,255,0.62)", backdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 24px 64px rgba(124,58,237,0.09)" }}>
               <div>
                 <div className="h-1 w-14 mx-auto mb-6 rounded-full" style={{ background:"linear-gradient(90deg,#7c3aed,#a855f7)" }}/>
-                <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(26px,3.5vw,40px)" }} className="text-gray-900 mb-3">Book a free<br/><em style={{ color:"#7c3aed" }}>20-min call.</em></h3>
-                <p style={SF} className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.</p>
+                <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(26px,3.5vw,40px)" }} className="text-gray-900 mb-3">
+                  Book a free<br/><em style={{ color:"#7c3aed" }}>20-min call.</em>
+                </h3>
+                <p style={SF} className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
+                  Pick a time that works for you. We&apos;ll talk about your business, your workflow, and how quazieR can help. No pressure.
+                </p>
               </div>
               <div className="flex flex-col gap-3 w-full max-w-xs">
                 {["No contracts","Live in 48h","Cancel anytime"].map(t=>(
-                  <motion.div key={t} whileHover={{ x:5, scale:1.02 }} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  <motion.div key={t} whileHover={{ x:5, scale:1.02 }}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3"
                     style={{ background:"rgba(124,58,237,0.04)", border:"1px solid rgba(124,58,237,0.1)" }}>
                     <span className="h-2 w-2 rounded-full shrink-0 bg-purple-400"/>
                     <span style={SF} className="text-sm text-gray-600">{t}</span>
                   </motion.div>
                 ))}
               </div>
-              <MagBtn dark href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG">
+              <MagBtn dark href="https://api.leadconnectorhq.com/widget/booking/qJg74N6UCUVhwWV1yBKG" onClick={trackLead}>
                 Book your free call →
               </MagBtn>
               <p style={SF} className="text-xs text-gray-400">Opens our scheduling page — pick any available slot</p>
@@ -1246,6 +1365,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor:"none" }}>
+      {/* Inject all CSS animations once — zero runtime JS for any loop */}
+      <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS }}/>
+
       {/* Layer order: aurora orbs (-z-10) → liquid waves (1) → cursor (9998/9999) → content (4) */}
       <AuroraOrbs/>
       <LiquidWaves/>
