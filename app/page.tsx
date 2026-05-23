@@ -66,12 +66,8 @@ const FAQS = [
 ];
 
 // ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
-// All looping animations moved to CSS — zero JS per frame, GPU-composited
 const GLOBAL_CSS = `
-  /* ── Ticker ── */
   @keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-
-  /* ── Aurora orbs ── */
   @keyframes orb1 {
     0%,100% { transform: translate(0px, 0px) scale(1); }
     40%     { transform: translate(55px, -35px) scale(1.09); }
@@ -90,8 +86,6 @@ const GLOBAL_CSS = `
   .orb-1 { animation: orb1 28s ease-in-out infinite; will-change: transform; }
   .orb-2 { animation: orb2 34s ease-in-out infinite; animation-delay: -6s; will-change: transform; }
   .orb-3 { animation: orb3 25s ease-in-out infinite; animation-delay: -11s; will-change: transform; }
-
-  /* ── Liquid waves ── */
   @keyframes wave1 { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
   @keyframes wave2 { 0%{ transform:translateX(-50%) } 100%{ transform:translateX(0) } }
   @keyframes wave3 { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
@@ -100,12 +94,8 @@ const GLOBAL_CSS = `
   .lw2 { animation: wave2 24s linear infinite; will-change: transform; }
   .lw3 { animation: wave3 14s linear infinite; will-change: transform; }
   .lw4 { animation: wave4 30s linear infinite; will-change: transform; }
-
-  /* ── Pulse dot (nav status) ── */
   @keyframes ping { 75%,100%{ transform:scale(2); opacity:0; } }
   .ping { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
-
-  /* ── Problem section dots ── */
   @keyframes dotPulse {
     0%,100% { opacity: 0.15; transform: scale(0.6); }
     50%     { opacity: 1;    transform: scale(1.3); }
@@ -116,32 +106,22 @@ const GLOBAL_CSS = `
     animation: dotPulse 2.5s ease-in-out infinite;
     will-change: opacity, transform;
   }
-
-  /* ── Voice pulse rings ── */
   @keyframes voiceRing {
     0%,100% { opacity: 0.5; transform: scale(1); }
     50%     { opacity: 0.07; transform: scale(1.16); }
   }
   .voice-ring { animation: voiceRing 2.8s ease-in-out infinite; }
-
-  /* ── Voice button glow ── */
   @keyframes voiceGlow {
     0%,100% { box-shadow: 0 8px 28px rgba(124,58,237,0.4); }
     50%     { box-shadow: 0 14px 50px rgba(124,58,237,0.65); }
   }
   .voice-btn { animation: voiceGlow 2s ease-in-out infinite; }
-
-  /* ── Typing dots ── */
   @keyframes typingBounce { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
   .typing-dot { animation: typingBounce 0.6s ease-in-out infinite; }
   .typing-dot:nth-child(2) { animation-delay: 0.15s; }
   .typing-dot:nth-child(3) { animation-delay: 0.30s; }
-
-  /* ── Scroll cue line ── */
   @keyframes scrollCue { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(12px) } }
   .scroll-cue { animation: scrollCue 2s ease-in-out infinite; }
-
-  /* ── CTA trust badges ── */
   @keyframes badgePop { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.6) } }
 `;
 
@@ -158,7 +138,6 @@ function QZLogo({ size = 36 }: { size?: number }) {
   );
 }
 
-// ─── ANIMATED COUNTER ─────────────────────────────────────────────────────────
 function AnimatedCounter({ to, suffix }: { to: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -171,7 +150,6 @@ function AnimatedCounter({ to, suffix }: { to: number; suffix: string }) {
   return <span ref={ref}>{val}{suffix}</span>;
 }
 
-// ─── SPLIT WORD ANIMATION ─────────────────────────────────────────────────────
 function SplitWords({ text, delay = 0, style, className }: {
   text: string; delay?: number; style?: React.CSSProperties; className?: string;
 }) {
@@ -192,7 +170,6 @@ function SplitWords({ text, delay = 0, style, className }: {
   );
 }
 
-// ─── SCROLL REVEAL ────────────────────────────────────────────────────────────
 function Reveal({ children, delay = 0, y = 60, className, style }: {
   children: React.ReactNode; delay?: number; y?: number; className?: string; style?: React.CSSProperties;
 }) {
@@ -208,14 +185,11 @@ function Reveal({ children, delay = 0, y = 60, className, style }: {
   );
 }
 
-// ─── MAGNETIC BUTTON ──────────────────────────────────────────────────────────
-// Kept magnetic feel but spring stiffness increased so it settles faster (less lag)
 function MagBtn({ children, onClick, dark, href, className }: {
   children: React.ReactNode; onClick?: () => void; dark?: boolean; href?: string; className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0); const y = useMotionValue(0);
-  // Higher stiffness + damping = faster settle, less CPU time spent animating
   const sx = useSpring(x, { stiffness: 400, damping: 28 });
   const sy = useSpring(y, { stiffness: 400, damping: 28 });
 
@@ -249,18 +223,15 @@ function MagBtn({ children, onClick, dark, href, className }: {
   );
 }
 
-// ─── GLOW CARD ────────────────────────────────────────────────────────────────
-// FIX: glow only activates on hover — no springs running when idle
 function GlowCard({ children, className, style, hot }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; hot?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [glowPos, setGlowPos] = useState<{x:number,y:number}|null>(null);
 
-  // Use RAF-throttled handler to avoid firing every mousemove tick
   const rafRef = useRef<number>(0);
   const onMove = useCallback((e: React.MouseEvent) => {
-    if (rafRef.current) return; // skip if RAF already pending
+    if (rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = 0;
       if (!ref.current) return;
@@ -283,7 +254,6 @@ function GlowCard({ children, className, style, hot }: {
       style={{ ...style, position:"relative", overflow:"hidden" }}
       whileHover={{ y:-12, scale:1.02, boxShadow: hot ? "0 32px 80px rgba(124,58,237,0.28)" : "0 32px 80px rgba(124,58,237,0.14)" }}
       transition={{ duration:0.38, ease:E }}>
-      {/* Glow layer — only rendered when hovered */}
       {glowPos && (
         <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1, background: glowBg, transition:"background 0.1s" }}/>
       )}
@@ -292,20 +262,17 @@ function GlowCard({ children, className, style, hot }: {
   );
 }
 
-// ─── CUSTOM CURSOR ────────────────────────────────────────────────────────────
-// Only rendered on non-touch desktop devices
 function CustomCursor() {
   const ringRef = useRef<HTMLDivElement>(null);
   const dotRef  = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
-  const [isTouch, setIsTouch] = useState(true); // default true = hidden until confirmed mouse
+  const [isTouch, setIsTouch] = useState(true);
 
   const target = useRef({ x: -200, y: -200 });
   const current = useRef({ x: -200, y: -200 });
   const rafId = useRef<number>(0);
 
   useEffect(() => {
-    // Detect touch device — if no fine pointer, bail out entirely
     const isFinePointer = window.matchMedia("(pointer: fine)").matches;
     if (!isFinePointer) return;
     setIsTouch(false);
@@ -357,8 +324,6 @@ function CustomCursor() {
   );
 }
 
-// ─── LIQUID WAVES ─────────────────────────────────────────────────────────────
-// Pure CSS — unchanged, already GPU-composited
 function LiquidWaves() {
   return (
     <div style={{ position:"fixed", inset:0, zIndex:1, pointerEvents:"none", overflow:"hidden" }} aria-hidden>
@@ -395,32 +360,19 @@ function LiquidWaves() {
   );
 }
 
-// ─── AURORA ORBS ─────────────────────────────────────────────────────────────
-// FIX: was 3x Framer Motion JS animate loops → now pure CSS keyframes (GPU only)
 function AuroraOrbs() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden>
-      {/* Sky base */}
       <div style={{ position:"absolute", inset:0, background:"linear-gradient(175deg,#f9f5ff 0%,#ede4ff 18%,#e3eeff 40%,#f5e8ff 65%,#fff9f0 88%,#fdfcff 100%)" }}/>
-
-      {/* Orb 1 — top right, purple */}
       <div className="orb-1" style={{ position:"absolute", top:"-20%", left:"48%", width:1000, height:1000, borderRadius:"50%",
         background:"radial-gradient(circle,rgba(167,110,255,0.22) 0%,transparent 68%)", filter:"blur(90px)", willChange:"transform" }}/>
-
-      {/* Orb 2 — mid left, pink */}
       <div className="orb-2" style={{ position:"absolute", top:"28%", left:"-18%", width:800, height:800, borderRadius:"50%",
         background:"radial-gradient(circle,rgba(252,180,220,0.2) 0%,transparent 68%)", filter:"blur(80px)", willChange:"transform" }}/>
-
-      {/* Orb 3 — bottom right, blue */}
       <div className="orb-3" style={{ position:"absolute", bottom:"-22%", right:"-2%", width:1100, height:1100, borderRadius:"50%",
         background:"radial-gradient(circle,rgba(130,180,255,0.16) 0%,transparent 68%)", filter:"blur(100px)", willChange:"transform" }}/>
-
-      {/* Subtle grid */}
       <div style={{ position:"absolute", inset:0, opacity:0.014,
         backgroundImage:"linear-gradient(rgba(124,58,237,1) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,1) 1px,transparent 1px)",
         backgroundSize:"80px 80px" }}/>
-
-      {/* Grain */}
       <div style={{ position:"absolute", inset:0, opacity:0.018,
         backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         backgroundSize:"128px" }}/>
@@ -428,7 +380,6 @@ function AuroraOrbs() {
   );
 }
 
-// ─── DRAW LINE ────────────────────────────────────────────────────────────────
 function DrawLine({ className }: { className?: string }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
@@ -441,7 +392,6 @@ function DrawLine({ className }: { className?: string }) {
   );
 }
 
-// ─── NAV ──────────────────────────────────────────────────────────────────────
 function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -520,7 +470,6 @@ function Nav({ current, goto }: { current:Page; goto:(p:Page)=>void }) {
   );
 }
 
-// ─── FOOTER ───────────────────────────────────────────────────────────────────
 function Footer({ goto }: { goto:(p:Page)=>void }) {
   return (
     <footer style={{ borderTop:"1px solid rgba(0,0,0,0.07)", background:"rgba(255,255,255,0.55)", backdropFilter:"blur(24px)" }}>
@@ -550,7 +499,6 @@ function Footer({ goto }: { goto:(p:Page)=>void }) {
               </motion.a>
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)" }}>
-              {/* FIX: was motion.div with animate ping — now pure CSS */}
               <span className="relative flex h-1.5 w-1.5">
                 <span className="ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"/>
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"/>
@@ -583,7 +531,6 @@ function Footer({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ─── CHAT DEMO ────────────────────────────────────────────────────────────────
 function ChatDemo() {
   const INIT: Msg = { role:"ai", text:"Hi! I'm the quazieR AI. What kind of business do you run?" };
   const [msgs, setMsgs] = useState<Msg[]>([INIT]);
@@ -628,7 +575,6 @@ function ChatDemo() {
           ))}
           {typing && (
             <motion.div key="t" initial={{ opacity:0, scale:0.94 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }} className="flex justify-start">
-              {/* FIX: typing dots now CSS — was 3 separate motion.span animate loops */}
               <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm px-4 py-3" style={{ background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.06)" }}>
                 <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400 block"/>
                 <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400 block"/>
@@ -652,7 +598,6 @@ function ChatDemo() {
   );
 }
 
-// ─── FAQ ITEM ─────────────────────────────────────────────────────────────────
 function FAQItem({ q, a }: { q:string; a:string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -672,9 +617,6 @@ function FAQItem({ q, a }: { q:string; a:string }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HOME
-// ═══════════════════════════════════════════════════════════════════════════════
 function HomePage({ goto }: { goto:(p:Page)=>void }) {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target:heroRef, offset:["start start","end start"] });
@@ -684,14 +626,10 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
 
   return (
     <>
-      {/* ── HERO ── */}
       <section ref={heroRef} className="relative px-6 overflow-hidden"
         style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", paddingTop:"10rem", paddingBottom:"7rem", position:"relative", zIndex:4 }}>
-
         <motion.div style={{ y:heroY, opacity:heroO, scale:heroScale, position:"relative", zIndex:4 }}
           className="mx-auto max-w-5xl text-center">
-
-          {/* Badge */}
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, ease:E }}>
             <motion.span
               style={{ ...SF, color:"#7c3aed", background:"rgba(124,58,237,0.09)", border:"1px solid rgba(124,58,237,0.18)" }}
@@ -701,17 +639,13 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               AI Automation Studio
             </motion.span>
           </motion.div>
-
-          {/* Headline */}
           <h1 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(50px,8vw,112px)", lineHeight:1.15, perspective:600, overflow:"visible" }}
             className="text-gray-900 tracking-tight mb-6">
-            {/* Line 1 */}
             <motion.span style={{ display:"block", paddingBottom:"0.05em" }}
               initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.55, ease:E, delay:0.05 }}>
               quazieR,
             </motion.span>
-            {/* Line 2 — quicker uses no opacity anim (iOS WebkitTextFillColor bug) */}
             <span style={{ display:"block", paddingBottom:"0.15em" }}>
               <motion.span
                 style={{ display:"inline-block", marginRight:"0.2em" }}
@@ -729,17 +663,14 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               </motion.span>
             </span>
           </h1>
-
           <motion.p initial={{ opacity:0, y:20, filter:"blur(6px)" }} animate={{ opacity:1, y:0, filter:"blur(0px)" }}
             transition={{ duration:0.9, ease:E, delay:0.75 }}
             style={{ ...IF, fontStyle:"italic", fontSize:"clamp(18px,2.2vw,28px)" }}
             className="text-gray-400 mb-4">Work smarter. Not harder.</motion.p>
-
           <motion.p initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:0.88 }}
             style={SF} className="text-base text-gray-500 leading-relaxed max-w-2xl mx-auto mb-10">
             At <span style={{ color:"#7c3aed" }}>quazieR</span>, we build AI automation systems that answer calls, respond to messages, and follow up with leads automatically — so your business never misses an opportunity.
           </motion.p>
-
           <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.8, ease:E, delay:1 }}
             className="flex flex-wrap items-center justify-center gap-4">
             <MagBtn dark onClick={()=>goto("pricing")}>See pricing</MagBtn>
@@ -749,15 +680,11 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
               style={{ ...SF, background:"rgba(124,58,237,0.08)", border:"1px solid rgba(124,58,237,0.22)", color:"#7c3aed", borderRadius:9999, padding:"14px 32px" }}
               className="text-sm font-semibold">Try our AI ↓</motion.button>
           </motion.div>
-
-          {/* Scroll cue — CSS animation */}
           <motion.div className="flex flex-col items-center mt-20"
             initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.8 }}>
             <div className="scroll-cue" style={{ width:1, height:48, background:"linear-gradient(to bottom,rgba(124,58,237,0.7),transparent)" }}/>
           </motion.div>
         </motion.div>
-
-        {/* Stats card */}
         <motion.div initial={{ opacity:0, y:65, scale:0.93 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:1.2, ease:E, delay:1.1 }}
           className="mx-auto mt-24 max-w-4xl rounded-3xl overflow-hidden"
           style={{ position:"relative", zIndex:4, background:"rgba(255,255,255,0.58)", backdropFilter:"blur(26px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 30px 80px rgba(124,58,237,0.12),0 2px 0 rgba(255,255,255,0.8) inset" }}>
@@ -777,7 +704,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </motion.div>
       </section>
 
-      {/* ── TICKER ── */}
       <div className="overflow-hidden border-y py-4" style={{ borderColor:"rgba(124,58,237,0.08)", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(8px)", position:"relative", zIndex:4 }}>
         <div className="flex gap-10" style={{ width:"max-content", animation:"ticker 32s linear infinite" }}>
           {[...TICKER,...TICKER].map((t,i)=>(
@@ -788,14 +714,12 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </div>
 
-      {/* ── PROBLEM ── */}
       <section className="py-36 px-6" style={{ position:"relative", zIndex:4 }}>
         <div className="mx-auto grid max-w-6xl gap-16 md:grid-cols-[1fr_1.9fr] md:gap-28">
           <div className="md:sticky md:top-32 md:self-start">
             <Reveal>
               <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">The problem</p>
               <h2 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(36px,4.5vw,64px)" }} className="text-gray-900 leading-[0.93]">Good businesses<br/>lose <em style={{ color:"#7c3aed" }}>quietly.</em></h2>
-              {/* FIX: 40 motion.div with JS animate loops → 40 plain divs with CSS animation-delay */}
               <div className="mt-10 grid gap-1.5" style={{ gridTemplateColumns:"repeat(8,1fr)", width:"fit-content" }}>
                 {Array.from({ length:40 }, (_,i)=>(
                   <div key={i} className="problem-dot" style={{ animationDelay:`${i*0.08}s` }}/>
@@ -820,7 +744,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
       <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.28)", backdropFilter:"blur(8px)", position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <Reveal className="text-center mb-16">
@@ -847,7 +770,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── SERVICES ── */}
       <section className="py-24 px-6" style={{ position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -878,7 +800,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── DEMO ── */}
       <section id="demo-section" className="py-24 px-6" style={{ background:"rgba(255,255,255,0.28)", backdropFilter:"blur(8px)", position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <Reveal className="text-center mb-16">
@@ -903,14 +824,11 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
                 <p style={{ ...SF, color:"#7c3aed" }} className="text-xs font-semibold uppercase tracking-widest mb-4">AI Voice</p>
                 <h3 style={{ ...IF, fontStyle:"italic", fontSize:"clamp(22px,3vw,34px)" }} className="text-gray-900 mb-3">Call our AI receptionist</h3>
                 <p style={SF} className="text-sm text-gray-500 max-w-xs leading-relaxed mb-10">Experience a real AI answering calls 24/7. Pick up the phone — it&apos;s live right now.</p>
-
-                {/* FIX: pulse rings were 4 separate motion.div animate loops → CSS animation-delay */}
                 <div className="relative flex items-center justify-center mb-10">
                   {[70,100,130,165].map((s,i)=>(
                     <div key={s} className="voice-ring absolute rounded-full"
                       style={{ width:s, height:s, border:"1px solid rgba(124,58,237,0.18)", animationDelay:`${i*0.58}s` }}/>
                   ))}
-                  {/* FIX: glow pulse was motion.animate loop → CSS */}
                   <div className="voice-btn relative z-10 flex h-14 w-14 items-center justify-center rounded-full"
                     style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)" }}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" fill="white"/></svg>
@@ -924,7 +842,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── COMPARISON ── */}
       <section className="py-24 px-6" style={{ position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <Reveal className="mb-14">
@@ -954,7 +871,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── PRICING PREVIEW ── */}
       <section className="py-24 px-6" style={{ background:"rgba(255,255,255,0.28)", backdropFilter:"blur(8px)", position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1007,7 +923,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── FOUNDERS ── */}
       <section className="py-24 px-6" style={{ position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-[1fr_1.6fr] md:gap-24">
@@ -1037,7 +952,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
         </div>
       </section>
 
-      {/* ── CTA ── */}
       <section className="px-6 pb-36 pt-10" style={{ position:"relative", zIndex:4 }}>
         <div className="mx-auto max-w-6xl">
           <DrawLine className="mb-20 w-full"/>
@@ -1073,9 +987,6 @@ function HomePage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRICING
-// ═══════════════════════════════════════════════════════════════════════════════
 function PricingPage({ goto }: { goto:(p:Page)=>void }) {
   const [annual, setAnnual] = useState(false);
   return (
@@ -1172,9 +1083,6 @@ function PricingPage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SERVICES
-// ═══════════════════════════════════════════════════════════════════════════════
 function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
   const items = [
     { n:"01", title:"AI Website",           headline:"Your 24/7 sales machine.",       desc:"We build high-conversion websites that don't just look good — they actively capture and qualify leads around the clock.", details:["Custom design aligned to your brand","Lead capture with instant AI response","Mobile-first, performance-optimised","Connected to your CRM from day one","Built-in analytics and tracking"] },
@@ -1222,9 +1130,6 @@ function ServicesPage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ABOUT
-// ═══════════════════════════════════════════════════════════════════════════════
 function AboutPage({ goto }: { goto:(p:Page)=>void }) {
   const values = [
     { title:"Calm over chaos",   desc:"We build systems that reduce noise, not add to it. Every decision is guided by what creates the most clarity." },
@@ -1293,9 +1198,6 @@ function AboutPage({ goto }: { goto:(p:Page)=>void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CONTACT
-// ═══════════════════════════════════════════════════════════════════════════════
 function ContactPage() {
   return (
     <div className="pt-32 pb-24 px-6" style={{ position:"relative", zIndex:4 }}>
@@ -1340,7 +1242,6 @@ function ContactPage() {
               ))}
             </div>
           </Reveal>
-
           <Reveal y={42} delay={0.16}>
             <div className="rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-8"
               style={{ background:"rgba(255,255,255,0.62)", backdropFilter:"blur(24px)", border:"1px solid rgba(255,255,255,0.92)", boxShadow:"0 24px 64px rgba(124,58,237,0.09)" }}>
@@ -1375,26 +1276,18 @@ function ContactPage() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ROOT
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function Home() {
   const [page, setPage] = useState<Page>("home");
   const goto = (p: Page) => { window.scrollTo({ top:0, behavior:"smooth" }); setTimeout(()=>setPage(p), 120); };
 
-  // Always start at top on mount/refresh
   useEffect(() => { window.scrollTo({ top:0, behavior:"instant" as any }); }, []);
 
   return (
-    <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor: typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches ? "none" : "auto" }}>
-      {/* Inject all CSS animations once — zero runtime JS for any loop */}
+    <div className="min-h-screen text-gray-900 selection:bg-purple-200" style={{ ...SF, cursor: "auto" }}>
       <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS }}/>
-
-      {/* Layer order: aurora orbs (-z-10) → liquid waves (1) → cursor (9998/9999) → content (4) */}
       <AuroraOrbs/>
       <LiquidWaves/>
       <CustomCursor/>
-
       <div style={{ position:"relative", zIndex:4 }}>
         <Nav current={page} goto={goto}/>
         <AnimatePresence mode="wait">
